@@ -14,7 +14,7 @@ load_dotenv()
 EnvVars = os.environ
 
 #Checking if the Enviroment variables exist, and uses them to connect to database. If they were not found, uses default values
-mysqlAddress = "mysql://kartapp:" + EnvVars["MySQLPassword"] + "@" + EnvVars["MySQLAddress"] + "/user_table"
+mysqlAddress = "mysql://kartapp:bachelor-backend2019@kartapp.mysql.pythonanywhere-services.com/user_table"
 
 if EnvVars["MySQLPassword"] == "":
     print("WARNING: \"MySQLPassword\" Environment variable is not set. Please add the environment variable and restart your computer, see \"setting up dev\" on https://github.com/DAT210/user. MySQL Database now has no password")
