@@ -47,8 +47,7 @@ class UserRegistration(Resource):
             user_id = uid,
             user_email = data["email"],
             user_password = data["password"],
-            first_name = data["first_name"],
-            last_name = data["last_name"],
+            user_name = data["username"],
             user_birthday = data["birthday"],
             user_phone = data["phone"],
             city = data["city"]
@@ -158,8 +157,7 @@ class AllUsers(Resource):
 
 edit_parser = reqparse.RequestParser()
 edit_parser.add_argument('password', help = 'This field can be blank', required = False)
-edit_parser.add_argument('first_name', help = 'This field can be blank', required = False)
-edit_parser.add_argument('last_name', help = 'This field can be blank', required = False)
+edit_parser.add_argument('username', help = 'This field can be blank', required = False)
 edit_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
 edit_parser.add_argument('city', help = 'This field can be blank', required = False)
@@ -185,10 +183,8 @@ class Edit(Resource):
 
         if data["password"]:
             user_object.user_password = data["password"]
-        if data["first_name"]:
-            user_object.first_name = data["first_name"]
-        if data["last_name"]:
-            user_object.last_name = data["last_name"]
+        if data["username"]:
+            user_object.user_name = data["user_name"]
         if data["birthday"]:
             user_object.user_birthday = data["birthday"]
         if data["phone"]:
@@ -277,7 +273,7 @@ class GetPhone(Resource):
                 }, 500
 
 ## URI: /v1/user/name
-class GetName(Resource):
+class GetUsername(Resource):
     @jwt_required
     def get(self):
         try:
@@ -292,8 +288,7 @@ class GetName(Resource):
                 return {"message": "Invalid uid. The user doesnt exist in our database"}, 401
 
             return {"message": "Name of the user was found", 
-                "first_name": user_object.first_name, 
-                "last_name": user_object.last_name
+                "username": user_object.user_name 
                 }, 202
 
         except Exception as err:
@@ -316,26 +311,14 @@ class GetAll(Resource):
             if user_object.user_id == None:
                 return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
 
-            if user_object.address_id:
 
-                return {"message": "user was found", 
-                    "uid": current_user,
-                    "email": user_object.user_email,
-                    "first_name": user_object.first_name, 
-                    "last_name": user_object.last_name,
-                    "birthday": user_object.user_birthday,
-                    "phone": user_object.user_phone,
-                    "city": user_object.city
-                    }, 202
-                
             return {"message": "user was found", 
                 "uid": current_user,
                 "email": user_object.user_email,
-                "first_name": user_object.first_name, 
-                "last_name": user_object.last_name,
+                "username": user_object.user_name, 
                 "birthday": user_object.user_birthday,
                 "phone": user_object.user_phone,
-                "city": None,
+                "city": user_object.city
                 }, 202
 
         except Exception as err:

@@ -7,11 +7,9 @@ class User(db.Model):
     user_email = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
     user_password = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
 
-    first_name = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
-    last_name = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
+    user_name = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
     user_birthday = db.Column(db.Date, unique = False, nullable = True) # pylint: disable=no-member
     user_phone = db.Column(db.Integer, unique = False, nullable = True) # pylint: disable=no-member
-    address_id = db.Column(db.Integer, unique = True, nullable = True) # pylint: disable=no-member
 
     @staticmethod
     def generate_hash(password):
@@ -22,8 +20,8 @@ class User(db.Model):
         return pwd_context.verify(password, hash)
 
     @classmethod
-    def find_by_cid(cls, cid):
-        return cls.query.filter_by(user_id = cid).first()
+    def find_by_uid(cls, uid):
+        return cls.query.filter_by(user_id = uid).first()
 
     @classmethod
     def find_by_email(cls, email):
@@ -48,8 +46,7 @@ class User(db.Model):
         def to_json(x):
             return {
                 'email': x.user_email,
-                'first_name': x.first_name,
-                'last_name': x.last_name,
+                'user_name': x.user_name,
                 'password': x.user_password,
                 'birthday': x.user_birthday,
                 'phone': x.user_phone,
