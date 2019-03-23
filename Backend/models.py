@@ -75,9 +75,10 @@ class WhiteTokenModel(db.Model):
     def add(self):
         db.session.add(self) # pylint: disable=no-member
         db.session.commit() # pylint: disable=no-member
-    
-    def remove(self, jti):
-        db.session.query.filter_by(jti = jti).delete() # pylint: disable=no-member
+
+    @classmethod
+    def remove(cls, jti):
+        db.session.query(cls).delete() # pylint: disable=no-member
         db.session.commit() # pylint: disable=no-member
 
     @classmethod

@@ -174,7 +174,7 @@ class Edit(Resource):
         if data["phone"]:
             user_object.user_phone = data["phone"]
         if data["city"]:
-            user_object.city = data["city"]
+            user_object.user_city = data["city"]
 
         try:
             # Saving the new user to the database. the method is located in models.py
@@ -316,7 +316,7 @@ class GetAll(Resource):
                 "username": user_object.user_name, 
                 "birthday": user_object.user_birthday,
                 "phone": user_object.user_phone,
-                "city": user_object.city
+                "city": user_object.user_city
                 }, 202
 
         except Exception as err:
