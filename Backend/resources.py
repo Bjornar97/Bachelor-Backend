@@ -10,7 +10,8 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
 registration_parser.add_argument('password', help = 'This field cannot be blank', required = True)
-registration_parser.add_argument('username', help = 'This field can be blank', required = False)
+registration_parser.add_argument('username', help = 'This field can be blank', required = True)
+
 registration_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
 registration_parser.add_argument('city', help = 'This field can be blank', required = False)
