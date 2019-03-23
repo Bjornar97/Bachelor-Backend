@@ -5,7 +5,7 @@ import json
 from run import app
 import re
 
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, get_jti)
 
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
@@ -64,7 +64,7 @@ class UserRegistration(Resource):
             # Making tokens so the User is logged in
             access_token = create_access_token(identity = uid)
 
-            whitelist_token = WhiteTokenModel(jti = access_token["jti"])
+            whitelist_token = WhiteTokenModel(jti = get_jti(access_token))
             whitelist_token.add()
 
             return {
@@ -91,8 +91,10 @@ class UserLogin(Resource):
         # Checking password, if correct, it makes tokens to log the User in
         if User.verify_hash(data["password"], current_user.user_password):
             access_token = create_access_token(identity = current_user.user_id)
-            whitelist_token = WhiteTokenModel(jti = access_token["jti"])
+
+            whitelist_token = WhiteTokenModel(jti = get_jti(access_token))
             whitelist_token.add()
+            
             return {
                 'message': 'Logged in as {}'.format(current_user.user_email),
                 'access_token': access_token
