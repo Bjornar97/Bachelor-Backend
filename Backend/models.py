@@ -6,10 +6,11 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key = True, nullable = False) # pylint: disable=no-member
     user_email = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
     user_password = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
-
-    user_name = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
+    user_name = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
+    
     user_birthday = db.Column(db.Date, unique = False, nullable = True) # pylint: disable=no-member
     user_phone = db.Column(db.Integer, unique = False, nullable = True) # pylint: disable=no-member
+    user_city = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
 
     @staticmethod
     def generate_hash(password):

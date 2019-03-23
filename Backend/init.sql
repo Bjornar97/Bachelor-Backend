@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS user_table (
   user_name varchar(128) DEFAULT NULL,
   user_password varchar(93) DEFAULT NULL,
   user_phone int(11) DEFAULT NULL,
+  user_birthday date DEFAULT Null,
   user_city varchar(128) DEFAULT NULL,
   PRIMARY KEY (user_id),
   UNIQUE KEY Uemail_UNIQUE (user_email),
@@ -19,4 +20,3 @@ CREATE TABLE IF NOT EXISTS token_whitelist (
   jti varchar(128) DEFAULT NULL,
   PRIMARY KEY (id)
 );
-

@@ -50,7 +50,7 @@ class UserRegistration(Resource):
             user_name = data["username"],
             user_birthday = data["birthday"],
             user_phone = data["phone"],
-            city = data["city"]
+            user_city = data["city"]
         )
 
         try:
@@ -59,12 +59,12 @@ class UserRegistration(Resource):
 
             # Making tokens so the User is logged in
             access_token = create_access_token(identity = uid)
-            refresh_token = create_refresh_token(identity = uid)
+
+            # TODO: Legge access_token inn i whitelist
 
             return {
                 'message': 'User {} was created'.format( data['email']),
-                'access_token': access_token,
-                'refresh_token': refresh_token
+                'access_token': access_token
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
@@ -79,22 +79,22 @@ class UserLogin(Resource):
 
         # Finding User from the database
         current_user = User.find_by_email(data['email'])
+
         if not current_user:
             return {'message': 'User {} doesn\'t exist'.format(data['email'])}
         
         # Checking password, if correct, it makes tokens to log the User in
         if User.verify_hash(data["password"], current_user.user_password):
             access_token = create_access_token(identity = current_user.user_id)
-            refresh_token = create_refresh_token(identity = current_user.user_id)
+            # TODO: Legg access_token inn i whitelist
             return {
                 'message': 'Logged in as {}'.format(current_user.user_email),
-                'access_token': access_token,
-                'refresh_token': refresh_token
+                'access_token': access_token
             }, 202
         else:
             return {'message': 'Wrong email or password'}, 401
 
-#Logout access
+#Logout access. TODO: Needs to be rewritten
 ## URI: /logout/access
 class UserLogoutAccess(Resource):
     # Requires a jwt object to run, which basically means that the User must be logged in to log out(which makes sense)
@@ -109,32 +109,6 @@ class UserLogoutAccess(Resource):
             return {'message': 'Something went wrong', 
                 "error": str(err)
                 }, 500
-
-# Logout refresh
-## URI: /logout/refresh
-class UserLogoutRefresh(Resource):
-    @jwt_refresh_token_required
-    def post(self):
-        jti = get_raw_jwt()['jti']
-        try:
-            revoked_token = RevokedTokenModel(jti = jti)
-            revoked_token.add()
-            return {'message': 'Refresh token has been revoked'}, 200
-        except Exception as err:
-            return {'message': 'Something went wrong', 
-                "error": str(err)
-                }, 500
-
-# Refresh access token with refresh token
-## URI: /token/refresh
-class TokenRefresh(Resource):
-    @jwt_refresh_token_required
-    def post(self):
-        current_user = get_jwt_identity()
-        access_token = create_access_token(identity = current_user)
-        return {'access_token': access_token}, 201
-
-
 
 #Only for testing purposes
 ## TODO: (IMPORTANTE) Delete "AllUsers" class before production!

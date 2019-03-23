@@ -14,7 +14,7 @@ load_dotenv()
 EnvVars = os.environ
 
 #Checking if the Enviroment variables exist, and uses them to connect to database. If they were not found, uses default values
-mysqlAddress = "mysql+pymysql://kartapp:bachelor-backend2019@kartapp.mysql.pythonanywhere-services.com/user_table"
+mysqlAddress = "mysql+pymysql://" + EnvVars["MySQLUsername"] + ":" + EnvVars["MySQLPassword"] + "@" + EnvVars["MySQLAddress"] + "/" + EnvVars["DatabaseName"]
 
 if EnvVars["MySQLPassword"] == "":
     print("WARNING: \"MySQLPassword\" Environment variable is not set. Please add the environment variable and restart your computer, see \"setting up dev\" on https://github.com/DAT210/user. MySQL Database now has no password")
@@ -43,9 +43,11 @@ else:
 jwt = JWTManager(app)
 
 #Setting up blacklist
-app.config['JWT_BLACKLIST_ENABLED'] = True
-app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config['JWT_SECRET_KEY'] = EnvVars["JWTSecret"]
+app.config['JWT_BLACKLIST_ENABLED'] = False
 app.config['JWT_ERROR_MESSAGE_KEY'] = "message"
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
+
 
 @jwt.token_in_blacklist_loader
 def check_if_token_in_blacklist(decrypted_token):
@@ -74,10 +76,8 @@ import views, models, resources
 api.add_resource(resources.UserRegistration, '/v1/registration')
 api.add_resource(resources.UserLogin, '/v1/login')
 api.add_resource(resources.UserLogoutAccess, '/v1/logout/access')
-api.add_resource(resources.UserLogoutRefresh, '/v1/logout/refresh')
-api.add_resource(resources.TokenRefresh, '/v1/token/refresh')
 
-### user API for getting information:
+### User API for getting information:
 api.add_resource(resources.AllUsers, '/v1/user')
 api.add_resource(resources.GetUid, '/v1/user/uid')
 api.add_resource(resources.GetEmail, '/v1/user/email')
