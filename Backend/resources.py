@@ -1,8 +1,9 @@
 from flask_restful import Resource, reqparse
-from models import User, RevokedTokenModel
+from models import User, WhiteTokenModel
 import random
 import json
 from run import app
+import re
 
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
@@ -29,7 +30,10 @@ class UserRegistration(Resource):
 
         # Checking if the email is already in our database, returns message if it is. Countinues if not.
         if User.find_by_email(data['email']):
-            return {'message': 'User {} already exists'. format(data['email'])}
+            return {'message': 'User {} already exists'. format(data['email'])}, 401
+
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+            return {'message': 'Eposten er ugyldig'}, 401
 
         # Hashing password as soon as possible, Please dont add anything between the line above and below this comment
         data["password"] = User.generate_hash(data["password"])
@@ -60,7 +64,8 @@ class UserRegistration(Resource):
             # Making tokens so the User is logged in
             access_token = create_access_token(identity = uid)
 
-            # TODO: Legge access_token inn i whitelist
+            whitelist_token = WhiteTokenModel(jti = access_token["jti"])
+            whitelist_token.add()
 
             return {
                 'message': 'User {} was created'.format( data['email']),
@@ -86,7 +91,8 @@ class UserLogin(Resource):
         # Checking password, if correct, it makes tokens to log the User in
         if User.verify_hash(data["password"], current_user.user_password):
             access_token = create_access_token(identity = current_user.user_id)
-            # TODO: Legg access_token inn i whitelist
+            whitelist_token = WhiteTokenModel(jti = access_token["jti"])
+            whitelist_token.add()
             return {
                 'message': 'Logged in as {}'.format(current_user.user_email),
                 'access_token': access_token
@@ -94,16 +100,15 @@ class UserLogin(Resource):
         else:
             return {'message': 'Wrong email or password'}, 401
 
-#Logout access. TODO: Needs to be rewritten
-## URI: /logout/access
-class UserLogoutAccess(Resource):
+## URI: /logout
+class UserLogout(Resource):
     # Requires a jwt object to run, which basically means that the User must be logged in to log out(which makes sense)
     @jwt_required
     def post(self):
         jti = get_raw_jwt()['jti']
         try:
-            revoked_token = RevokedTokenModel(jti = jti)
-            revoked_token.add()
+            whitelist_token = WhiteTokenModel(jti = jti)
+            whitelist_token.remove(jti)
             return {'message': 'Access token has been revoked'}, 200
         except Exception as err:
             return {'message': 'Something went wrong', 
@@ -140,6 +145,9 @@ edit_parser.add_argument('city', help = 'This field can be blank', required = Fa
 class Edit(Resource):
     @jwt_required
     def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
         data = edit_parser.parse_args()
         
         # Getting the uid from the jwt.
@@ -181,6 +189,8 @@ class Edit(Resource):
 class GetUid(Resource):
     @jwt_required
     def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -205,6 +215,9 @@ class GetUid(Resource):
 class GetEmail(Resource):
     @jwt_required
     def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -228,6 +241,9 @@ class GetEmail(Resource):
 class GetPhone(Resource):
     @jwt_required
     def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -250,6 +266,9 @@ class GetPhone(Resource):
 class GetUsername(Resource):
     @jwt_required
     def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -274,6 +293,9 @@ class GetUsername(Resource):
 class GetAll(Resource):
     @jwt_required
     def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()

@@ -67,8 +67,8 @@ class User(db.Model):
             return {'message': 'Something went wrong', "error": str(err)}
 
 
-class RevokedTokenModel(db.Model):
-    __tablename__ = 'revoked_tokens'
+class WhiteTokenModel(db.Model):
+    __tablename__ = 'token_whitelist'
     id = db.Column(db.Integer, primary_key = True) # pylint: disable=no-member
     jti = db.Column(db.String(128)) # pylint: disable=no-member
     
@@ -76,8 +76,12 @@ class RevokedTokenModel(db.Model):
         db.session.add(self) # pylint: disable=no-member
         db.session.commit() # pylint: disable=no-member
     
+    def remove(self, jti):
+        db.session.query.filter_by(jti = jti).delete() # pylint: disable=no-member
+        db.session.commit() # pylint: disable=no-member
+
     @classmethod
-    def is_jti_blacklisted(cls, jti):
+    def is_jti_whitelisted(cls, jti):
         query = cls.query.filter_by(jti = jti).first()
         return bool(query)
 

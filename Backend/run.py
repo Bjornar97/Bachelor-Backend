@@ -49,12 +49,6 @@ app.config['JWT_ERROR_MESSAGE_KEY'] = "message"
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
 
 
-@jwt.token_in_blacklist_loader
-def check_if_token_in_blacklist(decrypted_token):
-    jti = decrypted_token['jti']
-    return models.RevokedTokenModel.is_jti_blacklisted(jti)
-
-
 # Setting up passlib
 ## Making a CryptoContext which is used for password hashing
 pwd_context = CryptContext(
@@ -75,7 +69,7 @@ import views, models, resources
 ### user actions: 
 api.add_resource(resources.UserRegistration, '/v1/registration')
 api.add_resource(resources.UserLogin, '/v1/login')
-api.add_resource(resources.UserLogoutAccess, '/v1/logout/access')
+api.add_resource(resources.UserLogout, '/v1/logout')
 
 ### User API for getting information:
 api.add_resource(resources.AllUsers, '/v1/user')
