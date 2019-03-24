@@ -138,7 +138,6 @@ class AllUsers(Resource):
 # The following classes are for the Api
 
 edit_parser = reqparse.RequestParser()
-edit_parser.add_argument('password', help = 'This field can be blank', required = False)
 edit_parser.add_argument('username', help = 'This field can be blank', required = False)
 edit_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
@@ -159,17 +158,12 @@ class Edit(Resource):
         # Getting the User from the database through the model in models.py
         user_object = User.find_by_uid(current_user)
         
-        # Hashing password as soon as possible, Please dont add anything between the line above and below this comment
-        data["password"] = User.generate_hash(data["password"])
-
         # Checks if no object got returned in the query, then return 401 Unauthorized.
         if user_object.user_id == None:
-            return {"message": "Invalid uid. The User doesn't exist in our database"}, 401
+            return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
 
-        if data["password"]:
-            user_object.user_password = data["password"]
         if data["username"]:
-            user_object.user_name = data["user_name"]
+            user_object.user_name = data["username"]
         if data["birthday"]:
             user_object.user_birthday = data["birthday"]
         if data["phone"]:
@@ -179,6 +173,7 @@ class Edit(Resource):
 
         try:
             # Saving the new user to the database. the method is located in models.py
+            user_object.save_to_db()
 
             return {
                 'message': 'User {} was edited'.format(user_object.user_email),
