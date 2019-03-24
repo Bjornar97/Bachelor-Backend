@@ -310,7 +310,7 @@ class GetAll(Resource):
                 "uid": current_user,
                 "email": user_object.user_email,
                 "username": user_object.user_name, 
-                "birthday": user_object.user_birthday,
+                "birthday": str(user_object.user_birthday),
                 "phone": user_object.user_phone,
                 "city": user_object.user_city
                 }, 202
