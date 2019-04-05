@@ -7,10 +7,7 @@ class User(db.Model):
     user_email = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
     user_password = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
     user_name = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
-    
-    user_birthday = db.Column(db.Date, unique = False, nullable = True) # pylint: disable=no-member
     user_phone = db.Column(db.Integer, unique = False, nullable = True) # pylint: disable=no-member
-    user_city = db.Column(db.String(128), unique = False, nullable = True) # pylint: disable=no-member
 
     @staticmethod
     def generate_hash(password):
@@ -49,12 +46,47 @@ class User(db.Model):
                 'email': x.user_email,
                 'user_name': x.user_name,
                 'password': x.user_password,
-                'birthday': x.user_birthday,
                 'phone': x.user_phone,
-                'city': None,
                 }
 
         return {'users': list(map(lambda x: to_json(x), User.query.all()))}
+
+    # TODO: Remove this method before production!
+    @classmethod
+    def delete_all(cls):
+        try:
+            num_rows_deleted = db.session.query(cls).delete() # pylint: disable=no-member
+            db.session.commit() # pylint: disable=no-member
+            return {'message': '{} row(s) deleted'.format(num_rows_deleted)}
+        except Exception as err:
+            return {'message': 'Something went wrong', "error": str(err)}
+            
+
+class Friends(db.Model):
+    __tablename__ = "friends_table"
+    user_id = db.Column(db.Integer, primary_key = True, nullable = False) # pylint: disable=no-member
+    friend_id = db.Column(db.Integer, primary_key = True, nullable = False) # pylint: disable=no-member
+    friend_status = db.Column(db.String(128), unique = False, nullable = False) # pylint: disable=no-member
+    user_email = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
+
+    @classmethod
+    def find_by_uid(cls, uid):
+        return cls.query.filter_by(user_id = uid).all()
+        
+    @classmethod
+    def find_by_uid_and_fid(cls, uid, fid):
+        return cls.query.filter_by(user_id = uid, friend_id = fid).all()
+
+    def save_to_db(self):
+        db.session.add(self) # pylint: disable=no-member
+        db.session.commit() # pylint: disable=no-member
+
+    def commit(self):
+        db.session.commit() # pylint: disable=no-member
+        
+    def delete_from_db(self):
+        db.session.delete(self) # pylint: disable=no-member
+        db.session.commit() # pylint: disable=no-member
 
     # TODO: Remove this method before production!
     @classmethod
