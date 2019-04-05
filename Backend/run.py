@@ -63,6 +63,7 @@ pwd_context = CryptContext(
 
 import views, models, resources
 
+
 # Adding routes
 ## These are located in the resources file
 
@@ -79,6 +80,10 @@ api.add_resource(resources.GetUsername, '/v1/user/name')
 api.add_resource(resources.GetAll, '/v1/user/all')
 api.add_resource(resources.GetPhone, '/v1/user/phone')
 api.add_resource(resources.Edit, '/v1/user/edit')
+
+# Trip Endpoint
+api.add_resource(resources.Trips, '/v1/trip')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

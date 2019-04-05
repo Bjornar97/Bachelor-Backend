@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from models import User, WhiteTokenModel
+from models import User, WhiteTokenModel, Trip
 import random
 import json
 from run import app
@@ -319,3 +319,76 @@ class GetAll(Resource):
             return {"message": "Something went wrong on the server", 
                 "error": str(err)
                 }, 500
+
+get_trip_parser = reqparse.RequestParser()
+get_trip_parser.add_argument('tripid', help = 'This field can be blank', required = False)
+
+post_trip_parser = reqparse.RequestParser()
+post_trip_parser.add_argument('trips', help = 'This field cannot be blank', required = True)
+
+#URI: /v1/trip
+class Trips(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        data = get_trip_parser.parse_args()
+
+        try:
+            current_user = get_jwt_identity()
+
+            if not data["tripid"]:
+                # TODO: Get all trips from the user and return them
+                all_trips = Trip.find_all_trips(current_user)
+                return {"message": "All trips was found", "trips": json.dumps(all_trips)}, 200
+            else: 
+                # TODO: Hente turen med id og returnere den
+                trip = Trip.find_by_tid(data["tripid"])
+                return {"message": "The trip with id {} was found".format(data["tripid"]), "trip": json.dumps(trip)}
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", "error": str(err)}
+
+    @jwt_required
+    def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        
+        data = post_trip_parser.parse_args()
+        try:
+            current_user = get_jwt_identity()
+            if not data["trips"]:
+                return {'message': 'You need to provide trips'}
+            else:
+                trips = data["trips"]
+                tripsObject = json.loads(trips)
+                for trip in tripsObject:
+                    # TODO: Save trip to database here
+                    existingTrip = Trip.find_by_tid(trip.id)
+                    if trip != None: 
+                        if trip == existingTrip:
+                            cont = True
+
+                    if cont:
+                        continue
+
+                    #TODO: Improve this \/
+                    tid = random.randint(10000000, 99999999)
+                    while Trip.find_by_tid(tid):
+                        if tid >= 99999999:
+                            tid = 10000000
+                        else:
+                            tid += 1
+
+                    trip.id = tid # This will maybe not work
+                    new_trip = Trip(
+                        trip_id = tid,
+                        user_id = current_user,
+                        trip = json.dumps(trip)
+                    )
+                    new_trip.add()
+
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", "error": str(err)}
