@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from models import User, WhiteTokenModel
+from models import User, WhiteTokenModel, Friends
 import random
 import json
 from run import app
@@ -10,11 +10,9 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
 registration_parser.add_argument('password', help = 'This field cannot be blank', required = True)
-registration_parser.add_argument('username', help = 'This field can be blank', required = True)
+registration_parser.add_argument('username', help = 'This field can be blank', required = False)
 
-registration_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
-registration_parser.add_argument('city', help = 'This field can be blank', required = False)
 
 
 # Registration
@@ -53,9 +51,7 @@ class UserRegistration(Resource):
             user_email = data["email"],
             user_password = data["password"],
             user_name = data["username"],
-            user_birthday = data["birthday"],
-            user_phone = data["phone"],
-            user_city = data["city"]
+            user_phone = data["phone"]
         )
 
         try:
@@ -139,9 +135,7 @@ class AllUsers(Resource):
 
 edit_parser = reqparse.RequestParser()
 edit_parser.add_argument('username', help = 'This field can be blank', required = False)
-edit_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
-edit_parser.add_argument('city', help = 'This field can be blank', required = False)
 
 ## URI: /v1/user/edit
 class Edit(Resource):
@@ -164,12 +158,8 @@ class Edit(Resource):
 
         if data["username"]:
             user_object.user_name = data["username"]
-        if data["birthday"]:
-            user_object.user_birthday = data["birthday"]
         if data["phone"]:
             user_object.user_phone = data["phone"]
-        if data["city"]:
-            user_object.user_city = data["city"]
 
         try:
             # Saving the new user to the database. the method is located in models.py
@@ -317,5 +307,97 @@ class GetAll(Resource):
 
         except Exception as err:
             return {"message": "Something went wrong on the server", 
+                "error": str(err)
+                }, 500
+
+
+friend_edit_parser = reqparse.RequestParser()
+friend_edit_parser.add_argument('friend_id', help = 'This field cannot be blank', required = True)
+friend_edit_parser.add_argument('status', help = 'This field can be blank', required = False)
+
+## URI: /v1/
+class Friend(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        try:
+            # Getting the uid from the jwt.
+            current_user = get_jwt_identity()
+
+            # Getting the Friend List from the database through the model in models.py
+            friend_objects = Friends.find_by_uid(current_user)
+
+            # Checks if no object got returned in the query, then return 401 Unauthorized.
+            if friend_objects == None:
+                return {"message": "The User doesn't have any friends"}, 401
+
+            return {"message": "The uid was found", 
+                "uid": current_user
+                }, 202
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", 
+                "error": str(err)
+                }, 500
+    
+    @jwt_required
+    def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        data = friend_edit_parser.parse_args()
+        
+        # Getting the uid from the jwt.
+        current_user = get_jwt_identity()
+
+        # Getting the User from the database through the model in models.py
+        friend_object = Friends.find_by_uid_and_fid(current_user, data["friend_id"])
+        
+        # Checks if no object got returned in the query, then return 401 Unauthorized.
+        if friend_object.user_id == None:
+            return {"message": "Friend object not found"}, 401
+
+        if data["status"]:
+            friend_object.status = data["status"]
+
+        try:
+            # Saving the friend entry to the database. the method is located in models.py
+            friend_object.save_to_db()
+
+            return {
+                'message': 'Friend entry for friend {} was edited'.format(friend_object.friend_id),
+            }, 201
+        except Exception as err:
+            return {'message': 'Something went wrong', 
+                "error": str(err)
+                }, 500
+    
+    @jwt_required
+    def delete(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        data = friend_edit_parser.parse_args()
+        
+        # Getting the uid from the jwt.
+        current_user = get_jwt_identity()
+
+        # Getting the User from the database through the model in models.py
+        friend_object = Friends.find_by_uid_and_fid(current_user, data["friend_id"])
+
+        # Checks if no object got returned in the query, then return 401 Unauthorized.
+        if friend_object.user_id == None:
+            return {"message": "Friend object not found"}, 401
+
+        try:
+            # Deleting friend entry from the database. the method is located in models.py
+            friend_object.delete_from_db()
+
+            return {
+                'message': 'Friend entry for friend {} was deleted'.format(friend_object.friend_id),
+            }, 201
+        except Exception as err:
+            return {'message': 'Something went wrong', 
                 "error": str(err)
                 }, 500
