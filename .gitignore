@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# docker
+.dockerignore
+docker-compose.yml
+Dockerfile
+requirements.txt

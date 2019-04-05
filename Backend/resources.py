@@ -299,10 +299,8 @@ class GetAll(Resource):
             return {"message": "user was found", 
                 "uid": current_user,
                 "email": user_object.user_email,
-                "username": user_object.user_name, 
-                "birthday": str(user_object.user_birthday),
-                "phone": user_object.user_phone,
-                "city": user_object.user_city
+                "username": user_object.user_name,
+                "phone": user_object.user_phone
                 }, 202
 
         except Exception as err:
@@ -352,10 +350,10 @@ class Friend(Resource):
         current_user = get_jwt_identity()
 
         # Getting the User from the database through the model in models.py
-        friend_object = Friends.find_by_uid_and_fid(current_user, data["friend_id"])
+        friend_object = Friends.find_by_uid_and_fid(current_user, int(data["friend_id"]))
         
         # Checks if no object got returned in the query, then return 401 Unauthorized.
-        if friend_object.user_id == None:
+        if friend_object == None:
             return {"message": "Friend object not found"}, 401
 
         if data["status"]:
