@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS user;
+CREATE DATABASE IF NOT EXISTS kartapp_database;
 
-USE user;
+USE kartapp_database;
 
 CREATE TABLE IF NOT EXISTS user_table (
   user_id int(16) NOT NULL,
