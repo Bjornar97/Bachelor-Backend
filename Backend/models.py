@@ -24,6 +24,10 @@ class User(db.Model):
     @classmethod
     def find_by_email(cls, email):
         return cls.query.filter_by(user_email = email).first()
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.query.filter_by(user_name = username).first()
     
     @classmethod
     def number_of_users(cls):
@@ -67,7 +71,6 @@ class Friends(db.Model):
     user_id = db.Column(db.Integer, primary_key = True, nullable = False) # pylint: disable=no-member
     friend_id = db.Column(db.Integer, primary_key = True, nullable = False) # pylint: disable=no-member
     friend_status = db.Column(db.String(128), unique = False, nullable = False) # pylint: disable=no-member
-    user_email = db.Column(db.String(128), unique = True, nullable = False) # pylint: disable=no-member
 
     @classmethod
     def find_by_uid(cls, uid):
@@ -75,7 +78,7 @@ class Friends(db.Model):
         
     @classmethod
     def find_by_uid_and_fid(cls, uid, fid):
-        return cls.query.filter_by(user_id = uid, friend_id = fid).all()
+        return cls.query.filter_by(user_id = uid, friend_id = fid).first()
 
     def save_to_db(self):
         db.session.add(self) # pylint: disable=no-member
