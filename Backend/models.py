@@ -121,3 +121,33 @@ class WhiteTokenModel(db.Model):
         query = cls.query.filter_by(jti = jti).first()
         return bool(query)
 
+
+class Trip(db.Model):
+    __tablename__ = 'trips'
+    trip_id = db.Column(db.Integer, primary_key = True) # pylint: disable=no-member
+    user_id = db.Column(db.Integer, db.ForeignKey('user.uid'), nullable = False) # pylint: disable=no-member
+    trip = db.Column(db.Text, nullable = True) # pylint: disable=no-member
+    public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
+
+    @classmethod
+    def add(self):
+        db.session.add(self) # pylint: disable=no-member
+        db.session.commit() # pylint: disable=no-member
+    
+    @classmethod
+    def remove(cls):
+        db.session.query(cls).delete() # pylint: disable=no-member
+
+    @classmethod
+    def find_by_tid(cls, tid):
+        return cls.query.filter_by(trip_id = tid).first()
+
+    @classmethod
+    def find_all_trips(cls, uid):
+        return cls.query.filter_by(user_id = uid)
+
+    # Gets all trips from a user that is public
+    @classmethod
+    def find_all_public_trips(cls, uid):
+        return cls.query.filter(cls.user_id == uid, cls.public == True)
+    
