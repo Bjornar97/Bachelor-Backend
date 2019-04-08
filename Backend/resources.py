@@ -310,7 +310,7 @@ class GetAll(Resource):
 
 
 friend_edit_parser = reqparse.RequestParser()
-friend_edit_parser.add_argument('friend_name', help = 'This field can be blank', required = False)
+friend_edit_parser.add_argument('friend_name', help = 'This field cannot be blank', required = True)
 friend_edit_parser.add_argument('status', help = 'This field can be blank', required = False)
 
 ## URI: /v1/friend
