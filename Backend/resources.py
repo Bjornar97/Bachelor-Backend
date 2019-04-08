@@ -310,7 +310,7 @@ class GetAll(Resource):
 
 
 friend_edit_parser = reqparse.RequestParser()
-friend_edit_parser.add_argument('friend_id', help = 'This field cannot be blank', required = True)
+friend_edit_parser.add_argument('friend_name', help = 'This field can be blank', required = False)
 friend_edit_parser.add_argument('status', help = 'This field can be blank', required = False)
 
 ## URI: /v1/friend
@@ -326,12 +326,22 @@ class Friend(Resource):
             # Getting the Friend List from the database through the model in models.py
             friend_objects = Friends.find_by_uid(current_user)
 
-            # Checks if no object got returned in the query, then return 401 Unauthorized.
+            # Checks if no object got returned in the query, then return 404 Not Found.
             if friend_objects == None:
-                return {"message": "The User doesn't have any friends"}, 401
+                return {"message": "Error: Friend objects not found"}, 404
+            
+            friend_list = []
+
+            for friend_object in friend_objects:
+                friend_user = User.find_by_uid(friend_object.friend_id)
+                friend_list.append({
+                    "name": friend_user.user_name, 
+                    "status": friend_object.friend_status
+                    })
 
             return {"message": "The uid was found", 
-                "uid": current_user
+                "uid": current_user,
+                "friends": friend_list
                 }, 202
 
         except Exception as err:
@@ -344,27 +354,71 @@ class Friend(Resource):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
             return {'message': 'Not logged in'}, 401
 
-        data = friend_edit_parser.parse_args()
-        
-        # Getting the uid from the jwt.
         current_user = get_jwt_identity()
+        data = friend_edit_parser.parse_args()
 
-        # Getting the User from the database through the model in models.py
-        friend_object = Friends.find_by_uid_and_fid(current_user, int(data["friend_id"]))
-        
-        # Checks if no object got returned in the query, then return 401 Unauthorized.
-        if friend_object == None:
-            return {"message": "Friend object not found"}, 401
+        if not data["friend_name"]:
+            return {'message': 'Friend name is required'}
 
-        if data["status"]:
-            friend_object.status = data["status"]
+        friend_user = User.find_by_username(data["friend_name"])
+        if friend_user == None:
+            return {"message": "Friends user object not found"}, 404
+
+        if not data["status"]:
+            return {'message': 'Status is required'}
+
 
         try:
-            # Saving the friend entry to the database. the method is located in models.py
-            friend_object.save_to_db()
+            if data["status"] == "send":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object != None:
+                    return {"message": "Error: Already on list"}, 401
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object != None:
+                    return {"message": "Error: Already on friends list"}, 401
+
+                if friend_user.user_id == current_user:
+                    return {"message": "Error: Can't send a request to yourself"}, 401
+
+                own_friend_entry = Friends(
+                    user_id = current_user,
+                    friend_id = friend_user.user_id,
+                    friend_status = "sent"
+                )
+                friends_friend_entry = Friends(
+                    user_id = friend_user.user_id,
+                    friend_id = current_user,
+                    friend_status = "received"
+                )
+                own_friend_entry.save_to_db()
+                friends_friend_entry.save_to_db()
+                return {
+                    'message': "Friend request sent."
+                }, 201
+            
+            if data["status"] == "accept":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object == None:
+                    return {"message": "Friend object not found"}, 404
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object == None:
+                    return {"message": "Friends friend object not found"}, 404
+                
+                if friend_object.friend_status != "received" or friends_friend_object.friend_status != "sent":
+                    return {"message": "Can't accept because there is no request."}, 401
+
+                friend_object.friend_status = "accepted"
+                friends_friend_object.friend_status = "accepted"
+
+                friend_object.commit()
+                friends_friend_object.commit()
+                
+                return {
+                    'message': "Friend request accepted."
+                }, 201
 
             return {
-                'message': 'Friend entry for friend {} was edited'.format(friend_object.friend_id),
+                'message': "Invalid status."
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
@@ -376,26 +430,65 @@ class Friend(Resource):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
             return {'message': 'Not logged in'}, 401
 
-        data = friend_edit_parser.parse_args()
-        
-        # Getting the uid from the jwt.
-        current_user = get_jwt_identity()
-
-        # Getting the User from the database through the model in models.py
-        friend_object = Friends.find_by_uid_and_fid(current_user, data["friend_id"])
-
-        # Checks if no object got returned in the query, then return 401 Unauthorized.
-        if friend_object.user_id == None:
-            return {"message": "Friend object not found"}, 401
-
         try:
-            # Deleting friend entry from the database. the method is located in models.py
+            data = friend_edit_parser.parse_args()
+            
+            if not data["friend_name"]:
+                return {'message': 'Friend name is required'}
+
+            friend_user = User.find_by_username(data["friend_name"])
+            if friend_user == None:
+                return {"message": "Friends user object not found"}, 404
+
+            # Getting the uid from the jwt.
+            current_user = get_jwt_identity()
+
+            friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+            if friend_object == None:
+                return {"message": "Friend object not found"}, 404
+            friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+            if friends_friend_object == None:
+                return {"message": "Friends friend object not found"}, 404
+
             friend_object.delete_from_db()
+            friends_friend_object.delete_from_db()
 
             return {
-                'message': 'Friend entry for friend {} was deleted'.format(friend_object.friend_id),
+                'message': 'Friend entry for friend {} was deleted'.format(friend_user.user_name),
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
+                "error": str(err)
+                }, 500
+
+
+user_exists_parser = reqparse.RequestParser()
+user_exists_parser.add_argument('user_name', help = 'This field cannot be blank', required = True)
+
+## URI: /v1/user/exists
+class FindByUsername(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        try:
+            data = user_exists_parser.parse_args()
+            if not data["user_name"]:
+                return {'message': 'User name is required'}
+
+            # Getting the user from the database through the model in models.py
+            user_object = User.find_by_username(data["user_name"])
+
+            # Checks if no object got returned in the query, then return 404 Not Found.
+            if user_object == None:
+                return {"message": "Invalid username. The user doesnt exist in our database"}, 404
+
+            return {"message": "The user was found", 
+                "id": user_object.user_id
+                }, 202
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", 
                 "error": str(err)
                 }, 500
