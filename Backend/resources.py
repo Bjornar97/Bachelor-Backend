@@ -537,14 +537,6 @@ class Trips(Resource):
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
                 for trip in tripsObject:
-                    # TODO: Save trip to database here
-                    existingTrip = Trip.find_by_tid(trip.id)
-                    if trip != None: 
-                        if trip == existingTrip:
-                            cont = True
-
-                    if cont:
-                        continue
 
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
@@ -562,6 +554,9 @@ class Trips(Resource):
                     )
                     new_trip.add()
 
+    @jwt_required
+    def put(self):
+        #TODO: Update a trip
 
         except Exception as err:
             return {"message": "Something went wrong on the server", "error": str(err)}
