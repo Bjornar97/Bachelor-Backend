@@ -1,0 +1,26 @@
+version: "3"
+services:
+  app:
+    build: ./
+    depends_on:
+      - db
+    links:
+      - db
+    ports:
+      - "25201:25201"
+    environment:
+      MySQLPassword: "root"
+      Secret: "secret"
+      JWTSecret: "secret"
+      MySQLUsername: "root"
+      MySQLPassword: "root"
+      MySQLAddress: "db"
+      DatabaseName: "kartapp_database"
+
+  db:
+    build: ./Database
+    ports:
+      - "25202:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_ROOT_PASSWORD: "root"
