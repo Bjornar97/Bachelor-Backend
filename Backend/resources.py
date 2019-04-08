@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from models import User, WhiteTokenModel
+from models import User, WhiteTokenModel, Friends
 import random
 import json
 from run import app
@@ -10,11 +10,9 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
 registration_parser.add_argument('password', help = 'This field cannot be blank', required = True)
-registration_parser.add_argument('username', help = 'This field can be blank', required = True)
+registration_parser.add_argument('username', help = 'This field can be blank', required = False)
 
-registration_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
-registration_parser.add_argument('city', help = 'This field can be blank', required = False)
 
 
 # Registration
@@ -53,9 +51,7 @@ class UserRegistration(Resource):
             user_email = data["email"],
             user_password = data["password"],
             user_name = data["username"],
-            user_birthday = data["birthday"],
-            user_phone = data["phone"],
-            user_city = data["city"]
+            user_phone = data["phone"]
         )
 
         try:
@@ -139,9 +135,7 @@ class AllUsers(Resource):
 
 edit_parser = reqparse.RequestParser()
 edit_parser.add_argument('username', help = 'This field can be blank', required = False)
-edit_parser.add_argument('birthday', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
-edit_parser.add_argument('city', help = 'This field can be blank', required = False)
 
 ## URI: /v1/user/edit
 class Edit(Resource):
@@ -164,12 +158,8 @@ class Edit(Resource):
 
         if data["username"]:
             user_object.user_name = data["username"]
-        if data["birthday"]:
-            user_object.user_birthday = data["birthday"]
         if data["phone"]:
             user_object.user_phone = data["phone"]
-        if data["city"]:
-            user_object.user_city = data["city"]
 
         try:
             # Saving the new user to the database. the method is located in models.py
@@ -309,10 +299,193 @@ class GetAll(Resource):
             return {"message": "user was found", 
                 "uid": current_user,
                 "email": user_object.user_email,
-                "username": user_object.user_name, 
-                "birthday": str(user_object.user_birthday),
-                "phone": user_object.user_phone,
-                "city": user_object.user_city
+                "username": user_object.user_name,
+                "phone": user_object.user_phone
+                }, 202
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", 
+                "error": str(err)
+                }, 500
+
+
+friend_edit_parser = reqparse.RequestParser()
+friend_edit_parser.add_argument('friend_name', help = 'This field can be blank', required = False)
+friend_edit_parser.add_argument('status', help = 'This field can be blank', required = False)
+
+## URI: /v1/friend
+class Friend(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        try:
+            # Getting the uid from the jwt.
+            current_user = get_jwt_identity()
+
+            # Getting the Friend List from the database through the model in models.py
+            friend_objects = Friends.find_by_uid(current_user)
+
+            # Checks if no object got returned in the query, then return 404 Not Found.
+            if friend_objects == None:
+                return {"message": "Error: Friend objects not found"}, 404
+            
+            friend_list = []
+
+            for friend_object in friend_objects:
+                friend_user = User.find_by_uid(friend_object.friend_id)
+                friend_list.append({
+                    "name": friend_user.user_name, 
+                    "status": friend_object.friend_status
+                    })
+
+            return {"message": "The uid was found", 
+                "uid": current_user,
+                "friends": friend_list
+                }, 202
+
+        except Exception as err:
+            return {"message": "Something went wrong on the server", 
+                "error": str(err)
+                }, 500
+    
+    @jwt_required
+    def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        current_user = get_jwt_identity()
+        data = friend_edit_parser.parse_args()
+
+        if not data["friend_name"]:
+            return {'message': 'Friend name is required'}
+
+        friend_user = User.find_by_username(data["friend_name"])
+        if friend_user == None:
+            return {"message": "Friends user object not found"}, 404
+
+        if not data["status"]:
+            return {'message': 'Status is required'}
+
+
+        try:
+            if data["status"] == "send":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object != None:
+                    return {"message": "Error: Already on list"}, 401
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object != None:
+                    return {"message": "Error: Already on friends list"}, 401
+
+                if friend_user.user_id == current_user:
+                    return {"message": "Error: Can't send a request to yourself"}, 401
+
+                own_friend_entry = Friends(
+                    user_id = current_user,
+                    friend_id = friend_user.user_id,
+                    friend_status = "sent"
+                )
+                friends_friend_entry = Friends(
+                    user_id = friend_user.user_id,
+                    friend_id = current_user,
+                    friend_status = "received"
+                )
+                own_friend_entry.save_to_db()
+                friends_friend_entry.save_to_db()
+                return {
+                    'message': "Friend request sent."
+                }, 201
+            
+            if data["status"] == "accept":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object == None:
+                    return {"message": "Friend object not found"}, 404
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object == None:
+                    return {"message": "Friends friend object not found"}, 404
+                
+                if friend_object.friend_status != "received" or friends_friend_object.friend_status != "sent":
+                    return {"message": "Can't accept because there is no request."}, 401
+
+                friend_object.friend_status = "accepted"
+                friends_friend_object.friend_status = "accepted"
+
+                friend_object.commit()
+                friends_friend_object.commit()
+                
+                return {
+                    'message': "Friend request accepted."
+                }, 201
+
+            return {
+                'message': "Invalid status."
+            }, 201
+        except Exception as err:
+            return {'message': 'Something went wrong', 
+                "error": str(err)
+                }, 500
+    
+    @jwt_required
+    def delete(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        try:
+            data = friend_edit_parser.parse_args()
+            
+            if not data["friend_name"]:
+                return {'message': 'Friend name is required'}
+
+            friend_user = User.find_by_username(data["friend_name"])
+            if friend_user == None:
+                return {"message": "Friends user object not found"}, 404
+
+            # Getting the uid from the jwt.
+            current_user = get_jwt_identity()
+
+            friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+            if friend_object == None:
+                return {"message": "Friend object not found"}, 404
+            friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+            if friends_friend_object == None:
+                return {"message": "Friends friend object not found"}, 404
+
+            friend_object.delete_from_db()
+            friends_friend_object.delete_from_db()
+
+            return {
+                'message': 'Friend entry for friend {} was deleted'.format(friend_user.user_name),
+            }, 201
+        except Exception as err:
+            return {'message': 'Something went wrong', 
+                "error": str(err)
+                }, 500
+
+
+user_exists_parser = reqparse.RequestParser()
+user_exists_parser.add_argument('user_name', help = 'This field cannot be blank', required = True)
+
+## URI: /v1/user/exists
+class FindByUsername(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        try:
+            data = user_exists_parser.parse_args()
+            if not data["user_name"]:
+                return {'message': 'User name is required'}
+
+            # Getting the user from the database through the model in models.py
+            user_object = User.find_by_username(data["user_name"])
+
+            # Checks if no object got returned in the query, then return 404 Not Found.
+            if user_object == None:
+                return {"message": "Invalid username. The user doesnt exist in our database"}, 404
+
+            return {"message": "The user was found", 
+                "id": user_object.user_id
                 }, 202
 
         except Exception as err:
