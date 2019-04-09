@@ -139,11 +139,11 @@ A backend server for the app
     * No data to send
     * Data to recieve
         - message - Says what happened
-        - email - The email of the user
+        - friends - The friend list of the user
     * Status codes
         - 401 - Not logged in, or missing bearer token
         - 404 - The user doesnt exist
-        - 202 - Successfully found the email
+        - 202 - Successfully found the friend list
         - 500 - Something went wrong on the server
 
 - POST - Used to send a friend request (token required)
@@ -152,6 +152,8 @@ A backend server for the app
         - status - Specifies what you want to do
             - send - To send a new request
             - accept - To accept a friend request
+    * Data to recieve
+        - message - What happened
     * Status codes
         - 401 - Not logged in or missing token
         - 404 - The friend doesnt exist
