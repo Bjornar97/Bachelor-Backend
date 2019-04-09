@@ -47,6 +47,7 @@ class User(db.Model):
     def return_all(cls):
         def to_json(x):
             return {
+                'uid': x.user_id,
                 'email': x.user_email,
                 'user_name': x.user_name,
                 'password': x.user_password,
@@ -123,11 +124,11 @@ class WhiteTokenModel(db.Model):
 
 
 class Trip(db.Model):
-    __tablename__ = 'trips'
+    __tablename__ = 'trips_table'
     trip_id = db.Column(db.Integer, primary_key = True) # pylint: disable=no-member
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'), nullable = False) # pylint: disable=no-member
-    trip = db.Column(db.Text, nullable = True) # pylint: disable=no-member
-    public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
+    trip_json = db.Column(db.Text, nullable = True) # pylint: disable=no-member
+    is_public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
 
     @classmethod
     def add(self):

@@ -10,7 +10,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
 registration_parser.add_argument('password', help = 'This field cannot be blank', required = True)
-registration_parser.add_argument('username', help = 'This field can be blank', required = False)
+registration_parser.add_argument('username', help = 'This field cannot be blank', required = True)
 
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
 
@@ -21,18 +21,21 @@ class UserRegistration(Resource):
     def post(self):
         data = registration_parser.parse_args()
 
-        if not data["email"]:
-            return {'message': 'Email is required'}
-
-        if not data["password"]:
-            return {'message': 'Password is required'}
-
         # Checking if the email is already in our database, returns message if it is. Countinues if not.
         if User.find_by_email(data['email']):
-            return {'message': 'User {} already exists'. format(data['email'])}, 401
+            return {'message': 'User with email {} already exists'. format(data['email']), 'emailExists': True}, 403
+
+        if User.find_by_username(data['username']):
+            return {'message': 'User with username {} already exists'. format(data['username']), 'usernameExists': True}, 403
+
+        # TODO: Check username
+
+        if not re.match(r"^[a-zA-Z0-9]*$", data["username"]):
+            return {'message': 'Brukernavn er ugyldig, kan kun inneholde alfanumeriske tegn', "usernameInvalid": True}, 403
+
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
-            return {'message': 'Eposten er ugyldig'}, 401
+            return {'message': 'Eposten er ugyldig', "emailInvalid": True}, 403
 
         # Hashing password as soon as possible, Please dont add anything between the line above and below this comment
         data["password"] = User.generate_hash(data["password"])
@@ -134,7 +137,7 @@ class AllUsers(Resource):
 # The following classes are for the Api
 
 edit_parser = reqparse.RequestParser()
-edit_parser.add_argument('username', help = 'This field can be blank', required = False)
+edit_parser.add_argument('email', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
 
 ## URI: /v1/user/edit
@@ -156,8 +159,8 @@ class Edit(Resource):
         if user_object.user_id == None:
             return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
 
-        if data["username"]:
-            user_object.user_name = data["username"]
+        if data["email"]:
+            user_object.user_email = data["email"]
         if data["phone"]:
             user_object.user_phone = data["phone"]
 
@@ -166,7 +169,7 @@ class Edit(Resource):
             user_object.save_to_db()
 
             return {
-                'message': 'User {} was edited'.format(user_object.user_email),
+                'message': 'User {} was edited'.format(user_object.user_name),
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
@@ -520,8 +523,8 @@ class Trips(Resource):
                 trip = Trip.find_by_tid(data["tripid"])
                 return {"message": "The trip with id {} was found".format(data["tripid"]), "trip": json.dumps(trip)}
 
-        except Exception as err:
-            return {"message": "Something went wrong on the server", "error": str(err)}
+        except:
+            return {"message": "Something went wrong on the server"}, 500
 
     @jwt_required
     def post(self):
@@ -537,7 +540,6 @@ class Trips(Resource):
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
                 for trip in tripsObject:
-
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
                     while Trip.find_by_tid(tid):
@@ -550,13 +552,20 @@ class Trips(Resource):
                     new_trip = Trip(
                         trip_id = tid,
                         user_id = current_user,
-                        trip = json.dumps(trip)
+                        trip_json = json.dumps(trip),
+                        is_public = False
                     )
                     new_trip.add()
+                return {
+                    "message": "The trips was uploaded successfully",
+                }, 201
+        except Exception as err:
+            return {"message": str(err) }, 500
 
     @jwt_required
     def put(self):
         #TODO: Update a trip
-
+        try:
+            return "god morgne"
         except Exception as err:
             return {"message": "Something went wrong on the server", "error": str(err)}
