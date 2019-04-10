@@ -416,45 +416,24 @@ class Friend(Resource):
                 return {
                     'message': "Friend request accepted."
                 }, 201
+            
+            if data["status"] == "delete":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object == None:
+                    return {"message": "Friend object not found"}, 404
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object == None:
+                    return {"message": "Friends friend object not found"}, 404
+
+                friend_object.delete_from_db()
+                friends_friend_object.delete_from_db()
+
+                return {
+                    'message': 'Friend entry for friend {} was deleted'.format(friend_user.user_name),
+                }, 201
 
             return {
                 'message': "Invalid status."
-            }, 201
-        except Exception as err:
-            return {'message': 'Something went wrong', 
-                "error": str(err)
-                }, 500
-    
-    @jwt_required
-    def delete(self):
-        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
-
-        try:
-            data = friend_edit_parser.parse_args()
-            
-            if not data["friend_name"]:
-                return {'message': 'Friend name is required'}
-
-            friend_user = User.find_by_username(data["friend_name"])
-            if friend_user == None:
-                return {"message": "Friends user object not found"}, 404
-
-            # Getting the uid from the jwt.
-            current_user = get_jwt_identity()
-
-            friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
-            if friend_object == None:
-                return {"message": "Friend object not found"}, 404
-            friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
-            if friends_friend_object == None:
-                return {"message": "Friends friend object not found"}, 404
-
-            friend_object.delete_from_db()
-            friends_friend_object.delete_from_db()
-
-            return {
-                'message': 'Friend entry for friend {} was deleted'.format(friend_user.user_name),
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
