@@ -416,6 +416,21 @@ class Friend(Resource):
                 return {
                     'message': "Friend request accepted."
                 }, 201
+            
+            if data["status"] == "delete":
+                friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
+                if friend_object == None:
+                    return {"message": "Friend object not found"}, 404
+                friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
+                if friends_friend_object == None:
+                    return {"message": "Friends friend object not found"}, 404
+
+                friend_object.delete_from_db()
+                friends_friend_object.delete_from_db()
+
+                return {
+                    'message': 'Friend entry for friend {} was deleted'.format(friend_user.user_name),
+                }, 201
 
             return {
                 'message': "Invalid status."
