@@ -13,6 +13,11 @@ A backend server for the app
 
 ### /v1/registration
 - POST - Used to registrate a new user
+    * Data to send
+        - email - The email to register
+        - password - The password
+        - username - The desired username
+        - (optional) phone - The phone number of the user
     * Data to recieve:
         - message - A message that tells you what happened
         - access_token: If successful, you get an access_token that is you token to use while logged in.
@@ -198,6 +203,7 @@ A backend server for the app
         - trips - The trips to upload in an array
     * Data to recieve
         - message - What happened
+        - trips - The trips ou uploaded with new id and uploaded as true
     * Status codes
         - 401 - Not logged in or missing token
         - 201 - The trip(s) was uploaded

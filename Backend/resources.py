@@ -501,6 +501,7 @@ get_trip_parser.add_argument('tripid', help = 'This field can be blank', require
 
 post_trip_parser = reqparse.RequestParser()
 post_trip_parser.add_argument('trips', help = 'This field cannot be blank', required = True)
+post_trip_parser.add_argument('public', help = 'This field can be blank', required = False)
 
 #URI: /v1/trip
 class Trips(Resource):
@@ -539,6 +540,7 @@ class Trips(Resource):
             else:
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
+                uploadedTrips = []
                 for trip in tripsObject:
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
@@ -555,9 +557,12 @@ class Trips(Resource):
                         trip_json = json.dumps(trip),
                         is_public = False
                     )
+                    uploadedTrips.append(new_trip)
                     new_trip.add()
+                
                 return {
                     "message": "The trips was uploaded successfully",
+                    "trips": uploadedTrips
                 }, 201
         except Exception as err:
             return {"message": str(err) }, 500
