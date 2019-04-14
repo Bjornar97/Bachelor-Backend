@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from models import User, WhiteTokenModel, Friends
+from models import User, WhiteTokenModel, Friends, Trip
 import random
 import json
 from run import app
@@ -10,7 +10,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 registration_parser = reqparse.RequestParser()
 registration_parser.add_argument('email', help = 'This field cannot be blank', required = True)
 registration_parser.add_argument('password', help = 'This field cannot be blank', required = True)
-registration_parser.add_argument('username', help = 'This field can be blank', required = False)
+registration_parser.add_argument('username', help = 'This field cannot be blank', required = True)
 
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
 
@@ -21,18 +21,21 @@ class UserRegistration(Resource):
     def post(self):
         data = registration_parser.parse_args()
 
-        if not data["email"]:
-            return {'message': 'Email is required'}
-
-        if not data["password"]:
-            return {'message': 'Password is required'}
-
         # Checking if the email is already in our database, returns message if it is. Countinues if not.
         if User.find_by_email(data['email']):
-            return {'message': 'User {} already exists'. format(data['email'])}, 401
+            return {'message': 'User with email {} already exists'. format(data['email']), 'emailExists': True}, 403
+
+        if User.find_by_username(data['username']):
+            return {'message': 'User with username {} already exists'. format(data['username']), 'usernameExists': True}, 403
+
+        # TODO: Check username
+
+        if not re.match(r"^[a-zA-Z0-9]*$", data["username"]):
+            return {'message': 'Brukernavn er ugyldig, kan kun inneholde alfanumeriske tegn', "usernameInvalid": True}, 403
+
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
-            return {'message': 'Eposten er ugyldig'}, 401
+            return {'message': 'Eposten er ugyldig', "emailInvalid": True}, 403
 
         # Hashing password as soon as possible, Please dont add anything between the line above and below this comment
         data["password"] = User.generate_hash(data["password"])
@@ -134,7 +137,7 @@ class AllUsers(Resource):
 # The following classes are for the Api
 
 edit_parser = reqparse.RequestParser()
-edit_parser.add_argument('username', help = 'This field can be blank', required = False)
+edit_parser.add_argument('email', help = 'This field can be blank', required = False)
 edit_parser.add_argument('phone', help = 'This field can be blank', required = False)
 
 ## URI: /v1/user/edit
@@ -156,8 +159,8 @@ class Edit(Resource):
         if user_object.user_id == None:
             return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
 
-        if data["username"]:
-            user_object.user_name = data["username"]
+        if data["email"]:
+            user_object.user_email = data["email"]
         if data["phone"]:
             user_object.user_phone = data["phone"]
 
@@ -166,7 +169,7 @@ class Edit(Resource):
             user_object.save_to_db()
 
             return {
-                'message': 'User {} was edited'.format(user_object.user_email),
+                'message': 'User {} was edited'.format(user_object.user_name),
             }, 201
         except Exception as err:
             return {'message': 'Something went wrong', 
@@ -310,7 +313,7 @@ class GetAll(Resource):
 
 
 friend_edit_parser = reqparse.RequestParser()
-friend_edit_parser.add_argument('friend_name', help = 'This field can be blank', required = False)
+friend_edit_parser.add_argument('friend_name', help = 'This field cannot be blank', required = True)
 friend_edit_parser.add_argument('status', help = 'This field can be blank', required = False)
 
 ## URI: /v1/friend
@@ -471,3 +474,82 @@ class FindByUsername(Resource):
             return {"message": "Something went wrong on the server", 
                 "error": str(err)
                 }, 500
+
+get_trip_parser = reqparse.RequestParser()
+get_trip_parser.add_argument('tripid', help = 'This field can be blank', required = False)
+
+post_trip_parser = reqparse.RequestParser()
+post_trip_parser.add_argument('trips', help = 'This field cannot be blank', required = True)
+post_trip_parser.add_argument('public', help = 'This field can be blank', required = False)
+
+#URI: /v1/trip
+class Trips(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        data = get_trip_parser.parse_args()
+
+        try:
+            current_user = get_jwt_identity()
+
+            if not data["tripid"]:
+                # TODO: Get all trips from the user and return them
+                all_trips = Trip.find_all_trips(current_user)
+                return {"message": "All trips was found", "trips": json.dumps(all_trips)}, 200
+            else: 
+                # TODO: Hente turen med id og returnere den
+                trip = Trip.find_by_tid(data["tripid"])
+                return {"message": "The trip with id {} was found".format(data["tripid"]), "trip": json.dumps(trip)}
+
+        except:
+            return {"message": "Something went wrong on the server"}, 500
+
+    @jwt_required
+    def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        
+        data = post_trip_parser.parse_args()
+        try:
+            current_user = get_jwt_identity()
+            if not data["trips"]:
+                return {'message': 'You need to provide trips'}
+            else:
+                trips = data["trips"]
+                tripsObject = json.loads(trips)
+                uploadedTrips = []
+                for trip in tripsObject:
+                    #TODO: Improve this \/
+                    tid = random.randint(10000000, 99999999)
+                    while Trip.find_by_tid(tid):
+                        if tid >= 99999999:
+                            tid = 10000000
+                        else:
+                            tid += 1
+
+                    trip.id = tid # This will maybe not work
+                    new_trip = Trip(
+                        trip_id = tid,
+                        user_id = current_user,
+                        trip_json = json.dumps(trip),
+                        is_public = False
+                    )
+                    uploadedTrips.append(new_trip)
+                    new_trip.add()
+                
+                return {
+                    "message": "The trips was uploaded successfully",
+                    "trips": uploadedTrips
+                }, 201
+        except Exception as err:
+            return {"message": str(err) }, 500
+
+    @jwt_required
+    def put(self):
+        #TODO: Update a trip
+        try:
+            return "god morgne"
+        except Exception as err:
+            return {"message": "Something went wrong on the server", "error": str(err)}
