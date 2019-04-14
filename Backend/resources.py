@@ -76,17 +76,24 @@ class UserRegistration(Resource):
                 "error": str(err)
                 }, 500
 
+login_parser = reqparse.RequestParser()
+login_parser.add_argument('loginName')
+login_parser.add_argument('password')
+
 # Login
 ## URI: /login
 class UserLogin(Resource):
     def post(self):
-        data = registration_parser.parse_args()
+        data = login_parser.parse_args()
 
         # Finding User from the database
-        current_user = User.find_by_email(data['email'])
+        if re.match(r"[^@]+@[^@]+\.[^@]+", data["loginName"]):
+            current_user = User.find_by_email(data['loginName'])
+        else:
+            current_user = User.find_by_username(data['loginName'])
 
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['email'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['loginName'])}
         
         # Checking password, if correct, it makes tokens to log the User in
         if User.verify_hash(data["password"], current_user.user_password):
@@ -96,7 +103,7 @@ class UserLogin(Resource):
             whitelist_token.add()
             
             return {
-                'message': 'Logged in as {}'.format(current_user.user_email),
+                'message': 'Logged in as {}'.format(current_user.user_name),
                 'access_token': access_token
             }, 202
         else:
