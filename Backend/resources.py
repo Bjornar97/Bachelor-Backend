@@ -548,7 +548,7 @@ class Trips(Resource):
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
                 uploadedTrips = []
-                for trip in tripsObject:
+                for trip in tripsObject.trips:
                     print("Trip: " + str(trip.id))
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
