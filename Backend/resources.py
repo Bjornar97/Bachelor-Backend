@@ -560,7 +560,7 @@ class Trips(Resource):
                 return {'message': 'You need to provide trips'}
             else:
                 trips = data["trips"]
-                tripsObject = json.loads(trips)
+                # tripsObject = json.loads(trips)
                 uploadedTrips = []
                 for trip in tripsObject:
                     #TODO: Improve this \/
