@@ -561,10 +561,10 @@ class Trips(Resource):
             else:
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
-                print(str(tripsObject))
+                print(str(tripsObject), flush=True)
                 uploadedTrips = []
                 for trip in tripsObject.trips:
-                    print("Trip: " + str(trip.id))
+                    print("Trip: " + str(trip.id), flush=True)
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
                     while Trip.find_by_tid(tid):
