@@ -562,7 +562,7 @@ class Trips(Resource):
                 trips = data["trips"]
                 # tripsObject = json.loads(trips)
                 uploadedTrips = []
-                for trip in tripsObject:
+                for trip in trips:
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
                     while Trip.find_by_tid(tid):
