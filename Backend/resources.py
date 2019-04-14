@@ -561,6 +561,7 @@ class Trips(Resource):
             else:
                 trips = data["trips"]
                 tripsObject = json.loads(trips)
+                print(str(tripsObject))
                 uploadedTrips = []
                 for trip in tripsObject.trips:
                     print("Trip: " + str(trip.id))
