@@ -546,10 +546,9 @@ class Trips(Resource):
                 return {'message': 'You need to provide trips'}
             else:
                 trips = data["trips"]
-                # tripsObject = json.loads(trips)
+                tripsObject = json.loads(trips)
                 uploadedTrips = []
-                for trip in trips:
-                    trip = json.loads(trip)
+                for trip in tripsObject:
                     print("Trip: " + str(trip.id))
                     #TODO: Improve this \/
                     tid = random.randint(10000000, 99999999)
