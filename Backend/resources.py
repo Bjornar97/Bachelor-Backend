@@ -165,7 +165,7 @@ class Edit(Resource):
         # Checks if no object got returned in the query, then return 401 Unauthorized.
         if user_object.user_id == None:
             return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
-
+        
         if data["email"]:
             user_object.user_email = data["email"]
         if data["phone"]:
@@ -173,7 +173,7 @@ class Edit(Resource):
 
         try:
             # Saving the new user to the database. the method is located in models.py
-            user_object.save_to_db()
+            user_object.commit()
 
             return {
                 'message': 'User {} was edited'.format(user_object.user_name),
@@ -182,6 +182,41 @@ class Edit(Resource):
             return {'message': 'Something went wrong', 
                 "error": str(err)
                 }, 500
+
+password_parser = reqparse.RequestParser()
+password_parser.add_argument('password', help = 'This field cannot be blank', required = True)
+
+class ChangePassword(Resource):
+    @jwt_required
+    def post(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+        data = password_parser.parse_args()
+        data["password"] = User.generate_hash(data["password"])
+        
+        # Getting the uid from the jwt.
+        current_user = get_jwt_identity()
+
+        # Getting the User from the database through the model in models.py
+        user_object = User.find_by_uid(current_user)
+        
+        # Checks if no object got returned in the query, then return 401 Unauthorized.
+        if user_object.user_id == None:
+            return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
+        if data["password"]:
+            user_object.user_password = data["password"]
+        
+        try:
+            # Saving the new user to the database. the method is located in models.py
+            user_object.commit()
+
+            return {
+                'message': 'Password was edited',
+            }, 201
+        except Exception as err:
+            return {'message': 'Something went wrong', 
+                "error": str(err)
+                }, 500    
 
 ## URI: /v1/user/uid
 class GetUid(Resource):
