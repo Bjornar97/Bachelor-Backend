@@ -186,6 +186,7 @@ class Edit(Resource):
 password_parser = reqparse.RequestParser()
 password_parser.add_argument('password', help = 'This field cannot be blank', required = True)
 
+## URI: /v1/user/password
 class ChangePassword(Resource):
     @jwt_required
     def post(self):
