@@ -37,7 +37,6 @@ class UserRegistration(Resource):
         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
             return {'message': 'Eposten er ugyldig', "emailInvalid": True}, 403
 
-        # Hashing password as soon as possible, Please dont add anything between the line above and below this comment
         data["password"] = User.generate_hash(data["password"])
 
         #TODO: Improve this \/
