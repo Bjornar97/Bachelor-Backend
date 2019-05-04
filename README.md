@@ -76,6 +76,18 @@ A backend server for the app
         - 404 - The user doesnt exist in the database
         - 500 - Something went wrong on the server
 
+### /v1/user/password
+- POST - Used to change the password of the logged in user (Requires a bearer token)
+    * Data to send
+        - New Password
+    * Data to recieve
+        - message - What happened
+    * Status codes
+        - 201 - Password change success
+        - 400 - If no password field was sent
+        - 401 - Not logged in or invalid account
+        - 500 - Something went wrong on the server
+
 ### /v1/user/uid
 - GET - Used to get the uid (user id) of the user (Requiers a bearer token)
     * No data to send
