@@ -560,22 +560,17 @@ class Trips(Resource):
             if not data["trips"]:
                 return {'message': 'You need to provide trips'}
             else:
-                trips = json.loads(data["trips"])
+                tripsStr = data["trips"].replace("\'", "\"")
+                print(tripsStr, flush=True)
+                trips = json.loads(tripsStr)
                 print(str(trips), flush=True)
                 uploadedTrips = []
                 for trip in trips:
                     print("Trip: " + str(trip.id), flush=True)
                     #TODO: Improve this \/
-                    tid = random.randint(10000000, 99999999)
-                    while Trip.find_by_tid(tid):
-                        if tid >= 99999999:
-                            tid = 10000000
-                        else:
-                            tid += 1
 
                     trip.id = tid # This will maybe not work
                     new_trip = Trip(
-                        trip_id = tid,
                         user_id = current_user,
                         trip_json = json.dumps(trip),
                         is_public = False
@@ -585,7 +580,8 @@ class Trips(Resource):
                 
                 return {
                     "message": "The trips was uploaded successfully",
-                    "trips": uploadedTrips
+                    "trips": uploadedTrips,
+                    "id": tid
                 }, 201
         except Exception as err:
             return {"message": str(err) }, 500
