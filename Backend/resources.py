@@ -569,7 +569,16 @@ class Trips(Resource):
             if not data["trip"]:
                 return {'message': 'You need to provide a trip'}
             else:
+                #TODO: Improve this \/
+                tid = random.randint(10000000, 99999999)
+                while Trip.find_by_tid(tid):
+                    if tid >= 99999999:
+                        tid = 10000000
+                    else:
+                        tid += 1
+                
                 new_trip = Trip(
+                    trip_id = tid,
                     user_id = current_user,
                     trip_json = data["trip"],
                     is_public = public
