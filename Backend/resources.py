@@ -602,7 +602,6 @@ class Trips(Resource):
                         tid += 1
                 
                 new_trip = Trip(
-                    trip_id = tid,
                     user_id = current_user,
                     trip_json = data["trip"],
                     is_public = public
