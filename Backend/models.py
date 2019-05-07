@@ -151,3 +151,7 @@ class Trip(db.Model):
     def find_all_public_trips(cls, uid):
         return cls.query.filter(cls.user_id == uid, cls.public == True)
     
+    @classmethod
+    def does_trip_exist(cls, jsonTrip):
+        return cls.query.filter_by(trip_json = jsonTrip)
+    

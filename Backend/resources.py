@@ -519,6 +519,7 @@ class FindByUsername(Resource):
 
 get_trip_parser = reqparse.RequestParser()
 get_trip_parser.add_argument('userid', help = 'This field can be blank', required = False)
+get_trip_parser.add_argument('tripid', help = "This field can be blank", required = False)
 
 post_trip_parser = reqparse.RequestParser()
 post_trip_parser.add_argument('trip', help = 'This field cannot be blank', required = True)
@@ -533,6 +534,22 @@ class Trips(Resource):
         try:
             current_user = get_jwt_identity()
             data = get_trip_parser.parse_args()
+
+            # If a tripid is provided, it will return just that trip
+            if (data["tripid"]):
+                trip = Trip.find_by_tid(data["tripid"])
+                # Making sure that the user asking for the trip has access to it, either because the user owns it, or is friends with the owner
+                if (trip.user_id != current_user and Friends.find_by_uid_and_fid(current_user, trip.user_id)):
+                    return {
+                        "message": "You do not have access to that trip"
+                    }, 401
+                else:    
+                    return {
+                        "message": "The trip with id {} was found".format(data["tripid"]),
+                        "trips": [trip.trip_json],
+                        "tid": trip.trip_id
+                    }, 200
+
             if (not data["userid"]):
                 userId = current_user
             else:
@@ -560,6 +577,13 @@ class Trips(Resource):
         data = post_trip_parser.parse_args()
         print("Test print", flush = True)
         try:
+            existing_trip = Trip.does_trip_exist(data["trip"])
+            if (existing_trip):
+                return {
+                    "message": "The trip already exist",
+                    "tid": existing_trip.trip_id
+                }, 200
+
             current_user = get_jwt_identity()
             if (not data["public"]):
                 public = True
@@ -585,7 +609,8 @@ class Trips(Resource):
                 )
                 new_trip.save_to_db()
                 return {
-                    "message": "The trips was uploaded successfully"
+                    "message": "The trips was uploaded successfully",
+                    "tid": tid
                 }, 201
         except Exception as err:
             return {"message": str(err) }, 500
