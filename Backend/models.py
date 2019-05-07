@@ -125,7 +125,7 @@ class WhiteTokenModel(db.Model):
 
 class Trip(db.Model):
     __tablename__ = 'trips_table'
-    trip_id = db.Column(db.Integer, primary_key = True) # pylint: disable=no-member
+    trip_id = db.Column(db.Integer, primary_key = True, autoincrement=True) # pylint: disable=no-member
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'), nullable = False) # pylint: disable=no-member
     trip_json = db.Column(db.Text, nullable = True) # pylint: disable=no-member
     is_public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
