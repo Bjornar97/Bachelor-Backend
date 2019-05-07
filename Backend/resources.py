@@ -518,10 +518,10 @@ class FindByUsername(Resource):
                 }, 500
 
 get_trip_parser = reqparse.RequestParser()
-get_trip_parser.add_argument('tripid', help = 'This field can be blank', required = False)
+get_trip_parser.add_argument('userid', help = 'This field can be blank', required = False)
 
 post_trip_parser = reqparse.RequestParser()
-post_trip_parser.add_argument('trips', help = 'This field cannot be blank', required = True)
+post_trip_parser.add_argument('trip', help = 'This field cannot be blank', required = True)
 post_trip_parser.add_argument('public', help = 'This field can be blank', required = False)
 
 #URI: /v1/trip
@@ -530,16 +530,25 @@ class Trips(Resource):
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
             return {'message': 'Not logged in'}, 401
-
-        data = get_trip_parser.parse_args()
-
         try:
             current_user = get_jwt_identity()
-
-            if not data["tripid"]:
-                # TODO: Get all trips from the user and return them
-                all_trips = Trip.find_all_trips(current_user)
-                return {"message": "All trips was found", "trips": json.dumps(all_trips)}, 200
+            data = get_trip_parser.parse_args()
+            if (not data["userid"]):
+                userId = current_user
+            else:
+                userId = data["userid"]
+            
+            if (current_user == userId || Friends.find_by_uid_and_fid(current_user, userId)):
+                all_trips = Trip.find_all_public_trips(userId)
+                return {
+                    "message": "The trips of user {} was found".format(User.find_by_uid(userId).user_name),
+                    "trips": json.dumps(all_trips)
+                }, 200
+            else:
+                return {
+                    "message": "You are not friends with the requested user, therefore you cannot get their trips"
+                }, 401
+                
             else: 
                 # TODO: Hente turen med id og returnere den
                 trip = Trip.find_by_tid(data["tripid"])
@@ -554,34 +563,24 @@ class Trips(Resource):
             return {'message': 'Not logged in'}, 401
         
         data = post_trip_parser.parse_args()
-        print("Test print", flush = True)
         try:
             current_user = get_jwt_identity()
-            if not data["trips"]:
-                return {'message': 'You need to provide trips'}
+            if (not data["public"]):
+                public = True
             else:
-                tripsStr = data["trips"].replace("\'", "\"")
-                print(tripsStr, flush=True)
-                trips = json.loads(tripsStr)
-                print(str(trips), flush=True)
-                uploadedTrips = []
-                for trip in trips:
-                    print("Trip: " + str(trip.id), flush=True)
-                    #TODO: Improve this \/
+                public = bool(data["public"])
 
-                    trip.id = tid # This will maybe not work
-                    new_trip = Trip(
-                        user_id = current_user,
-                        trip_json = json.dumps(trip),
-                        is_public = False
-                    )
-                    uploadedTrips.append(new_trip)
-                    new_trip.add()
-                
+            if not data["trip"]:
+                return {'message': 'You need to provide a trip'}
+            else:
+                new_trip = Trip(
+                    user_id = current_user,
+                    trip_json = data["trip"],
+                    is_public = public
+                )
+                Trip.add()
                 return {
-                    "message": "The trips was uploaded successfully",
-                    "trips": uploadedTrips,
-                    "id": tid
+                    "message": "The trips was uploaded successfully"
                 }, 201
         except Exception as err:
             return {"message": str(err) }, 500
