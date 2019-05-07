@@ -538,7 +538,7 @@ class Trips(Resource):
             else:
                 userId = data["userid"]
             
-            if (current_user == userId || Friends.find_by_uid_and_fid(current_user, userId)):
+            if (current_user == userId or Friends.find_by_uid_and_fid(current_user, userId)):
                 all_trips = Trip.find_all_public_trips(userId)
                 return {
                     "message": "The trips of user {} was found".format(User.find_by_uid(userId).user_name),
