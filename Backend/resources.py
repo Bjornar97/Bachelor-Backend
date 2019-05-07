@@ -574,7 +574,7 @@ class Trips(Resource):
                     trip_json = data["trip"],
                     is_public = public
                 )
-                Trip.add()
+                new_trip.add()
                 return {
                     "message": "The trips was uploaded successfully"
                 }, 201
