@@ -130,8 +130,7 @@ class Trip(db.Model):
     trip_json = db.Column(db.Text, nullable = True) # pylint: disable=no-member
     is_public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
 
-    @classmethod
-    def add(self):
+    def save_to_db(self):
         db.session.add(self) # pylint: disable=no-member
         db.session.commit() # pylint: disable=no-member
     
