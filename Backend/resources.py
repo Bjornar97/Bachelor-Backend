@@ -548,11 +548,6 @@ class Trips(Resource):
                 return {
                     "message": "You are not friends with the requested user, therefore you cannot get their trips"
                 }, 401
-                
-            else: 
-                # TODO: Hente turen med id og returnere den
-                trip = Trip.find_by_tid(data["tripid"])
-                return {"message": "The trip with id {} was found".format(data["tripid"]), "trip": json.dumps(trip)}
 
         except:
             return {"message": "Something went wrong on the server"}, 500
