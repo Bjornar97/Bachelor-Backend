@@ -563,6 +563,7 @@ class Trips(Resource):
             return {'message': 'Not logged in'}, 401
         
         data = post_trip_parser.parse_args()
+        print("Test print", flush = True)
         try:
             current_user = get_jwt_identity()
             if (not data["public"]):
