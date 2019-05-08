@@ -578,11 +578,11 @@ class Trips(Resource):
         print("Test print", flush = True)
         try:
             existing_trip = Trip.does_trip_exist(data["trip"])
-            # if (existing_trip):
-            #     return {
-            #         "message": "The trip already exist",
-            #         "tid": existing_trip.trip_id
-            #     }, 200
+            if (existing_trip):
+                return {
+                    "message": "The trip already exist",
+                    "tid": existing_trip.trip_id
+                }, 200
 
             current_user = get_jwt_identity()
             if (not data["public"]):
@@ -644,9 +644,9 @@ class FriendsTrips(Resource):
 
             for friend in friends:
                 friendUser = User.find_by_uid(friend.friend_id)
-                friendTrips = Trip.find_all_trips(friend.friend_id)
+                friendsTrips = Trip.find_all_trips(friend.friend_id)
                 
-                for trip in FriendsTrips:
+                for trip in friendsTrips:
                     tripObject = {
                         "tripid": trip.trip_id,
                         "username": friendUser.user_name,
