@@ -622,3 +622,45 @@ class Trips(Resource):
             return "god morgne"
         except Exception as err:
             return {"message": "Something went wrong on the server", "error": str(err)}
+
+
+# URI: /v1/trip/friend
+class FriendsTrips(Resource):
+    @jwt_required
+    def get(self):
+        if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
+            return {'message': 'Not logged in'}, 401
+
+        try:
+            current_user = get_jwt_identity()
+
+            friends = Friends.find_by_uid(current_user)
+            if len(friends) == 0:
+                return {
+                    "message": "You have no friends"
+                }, 404
+
+            trips = []
+
+            for friend in friends:
+                friendUser = User.find_by_uid(friend.friend_id)
+                friendTrips = Trip.find_all_trips(friend.friend_id)
+                
+                for trip in FriendsTrips:
+                    tripObject = {
+                        "tripid": trip.trip_id,
+                        "username": friendUser.user_name,
+                        "tripjson": trip.trip_json
+                    }
+                    trips.append(tripObject)
+
+            return {
+                "message": "Your friends' trips were found",
+                "trips": json.dumps(trips)
+            }, 200
+
+        except Exception as error:
+            return {
+                "message": "Something went wrong on the server",
+                "error": error
+            }, 500

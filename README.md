@@ -223,3 +223,17 @@ A backend server for the app
 
 - PUT - Used to update a trip
     - Comming soon
+
+### /v1/trip/friends
+- GET - Used to get your friends' trips
+    * Data to recieve
+        - message - What happened
+        - array of the trips containing:
+            * tripid, the id of the trip
+            * username, the username of the owner of the trip
+            * tripjson, The trip in json
+    * Status codes
+        - 200 - Successfully got the trips
+        - 401 - Not logged in or missing token
+        - 404 - You have no friends
+        - 500 - Server error
