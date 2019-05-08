@@ -656,7 +656,7 @@ class FriendsTrips(Resource):
 
             return {
                 "message": "Your friends' trips were found",
-                "trips": json.dumps(trips)
+                "trips": trips
             }, 200
 
         except Exception as error:
