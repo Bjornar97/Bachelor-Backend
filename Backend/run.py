@@ -86,6 +86,7 @@ api.add_resource(resources.FindByUsername, '/v1/user/exists')
 
 # Trip Endpoint
 api.add_resource(resources.Trips, '/v1/trip')
+api.add_resource(resources.FriendsTrips, '/v1/trip/friends')
 
 if __name__ == '__main__':
     app.run(debug=True)
