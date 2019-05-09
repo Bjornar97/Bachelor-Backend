@@ -581,7 +581,7 @@ class Trips(Resource):
             if (existing_trip["exists"]):
                 return {
                     "message": "The trip already exist",
-                    "tid": existing_trip["trip_id"]
+                    "tripid": existing_trip["tid"]
                 }, 200
 
             current_user = get_jwt_identity()
@@ -610,7 +610,7 @@ class Trips(Resource):
                 new_trip.save_to_db()
                 return {
                     "message": "The trips was uploaded successfully",
-                    "tid": tid
+                    "tripid": tid
                 }, 201
         except Exception as err:
             return {"message": str(err) }, 500
