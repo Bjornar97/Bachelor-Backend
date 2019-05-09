@@ -537,7 +537,7 @@ class Trips(Resource):
 
             # If a tripid is provided, it will return just that trip
             if (data["tripid"]):
-                trip = Trip.find_by_tid(data["tripid"])
+                trip = Trip.find_by_tid(int(data["tripid"]))
                 # Making sure that the user asking for the trip has access to it, either because the user owns it, or is friends with the owner
                 if (trip.user_id != current_user and Friends.find_by_uid_and_fid(current_user, trip.user_id)):
                     return {
