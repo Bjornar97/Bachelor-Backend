@@ -642,16 +642,17 @@ class FriendsTrips(Resource):
             trips = []
 
             for friend in friends:
-                friendUser = User.find_by_uid(friend.friend_id)
-                friendsTrips = Trip.find_all_trips(friend.friend_id)
-                
-                for trip in friendsTrips:
-                    tripObject = {
-                        "tripid": trip.trip_id,
-                        "username": friendUser.user_name,
-                        "tripjson": trip.trip_json
-                    }
-                    trips.append(tripObject)
+                if friend.friend_status == "accepted":
+                    friendUser = User.find_by_uid(friend.friend_id)
+                    friendsTrips = Trip.find_all_trips(friend.friend_id)
+                    
+                    for trip in friendsTrips:
+                        tripObject = {
+                            "tripid": trip.trip_id,
+                            "username": friendUser.user_name,
+                            "tripjson": trip.trip_json
+                        }
+                        trips.append(tripObject)
 
             return {
                 "message": "Your friends' trips were found",
