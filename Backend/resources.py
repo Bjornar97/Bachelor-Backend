@@ -580,8 +580,7 @@ class Trips(Resource):
             existing_trip = Trip.does_trip_exist(data["trip"])
             if (existing_trip["exists"]):
                 return {
-                    "message": "The trip already exist",
-                    "tripid": existing_trip["tid"]
+                    "message": "The trip already exist"
                 }, 200
 
             current_user = get_jwt_identity()
