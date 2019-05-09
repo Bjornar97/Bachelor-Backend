@@ -545,15 +545,16 @@ class Trips(Resource):
                 trip = Trip.find_by_tid(int(tripid))
                 print("Found trip", flush=True)
                 # Making sure that the user asking for the trip has access to it, either because the user owns it, or is friends with the owner
-                if (trip.user_id != current_user and Friends.find_by_uid_and_fid(current_user, trip.user_id)):
+                isFriends = Friends.find_by_uid_and_fid(current_user, trip.user_id)
+                if (trip.user_id != current_user and isFriends == None):
                     print("No access", flush=True)
                     return {
                         "message": "You do not have access to that trip"
                     }, 401
-                else:
+                else if isFriends.friend_status == "accepted":
                     print("Returning", flush=True)
                     return {
-                        "message": "The trip with id {} was found".format(data["tripid"]),
+                        "message": "The trip with id {} was found".format(tripid),
                         "trips": [trip.trip_json],
                         "tid": trip.trip_id
                     }, 200
