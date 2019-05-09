@@ -153,7 +153,7 @@ class Trip(db.Model):
     
     @classmethod
     def does_trip_exist(cls, jsonTrip):
-        trip = cls.query.filter_by(trip_json = jsonTrip).first()
+        trip = cls.query.filter_by(cls.trip_json = jsonTrip).first()
         if trip is not None:
             return {
                 "exists": trip is not None,
