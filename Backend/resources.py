@@ -551,7 +551,7 @@ class Trips(Resource):
                     return {
                         "message": "You do not have access to that trip"
                     }, 401
-                else if isFriends.friend_status == "accepted":
+                elif isFriends.friend_status == "accepted":
                     print("Returning", flush=True)
                     return {
                         "message": "The trip with id {} was found".format(tripid),
