@@ -535,6 +535,7 @@ class Trips(Resource):
             print("Starting", flush=True)
             current_user = get_jwt_identity()
             data = get_trip_parser.parse_args()
+            print("Got data", flush=True)
 
             # If a tripid is provided, it will return just that trip
             if (data["tripid"]):
