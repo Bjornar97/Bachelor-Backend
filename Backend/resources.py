@@ -532,18 +532,23 @@ class Trips(Resource):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
             return {'message': 'Not logged in'}, 401
         try:
+            print("Starting", flush=True)
             current_user = get_jwt_identity()
             data = get_trip_parser.parse_args()
 
             # If a tripid is provided, it will return just that trip
             if (data["tripid"]):
+                print("tripid was provided", flush=True)
                 trip = Trip.find_by_tid(int(data["tripid"]))
+                print("Found trip", flush=True)
                 # Making sure that the user asking for the trip has access to it, either because the user owns it, or is friends with the owner
                 if (trip.user_id != current_user and Friends.find_by_uid_and_fid(current_user, trip.user_id)):
+                    print("No access", flush=True)
                     return {
                         "message": "You do not have access to that trip"
                     }, 401
-                else:    
+                else:
+                    print("Returning", flush=True)
                     return {
                         "message": "The trip with id {} was found".format(data["tripid"]),
                         "trips": [trip.trip_json],
