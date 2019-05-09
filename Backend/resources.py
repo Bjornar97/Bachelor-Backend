@@ -566,8 +566,11 @@ class Trips(Resource):
                     "message": "You are not friends with the requested user, therefore you cannot get their trips"
                 }, 401
 
-        except:
-            return {"message": "Something went wrong on the server"}, 500
+        except Exception as error:
+            return {
+                "message": "Something went wrong on the server",
+                "error": str(error)
+            }, 500
 
     @jwt_required
     def post(self):
