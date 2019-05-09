@@ -578,7 +578,7 @@ class Trips(Resource):
         print("Test print", flush = True)
         try:
             existing_trip = Trip.does_trip_exist(data["trip"])
-            if (existing_trip):
+            if (existing_trip.exists):
                 return {
                     "message": "The trip already exist",
                     "tid": existing_trip.trip_id
