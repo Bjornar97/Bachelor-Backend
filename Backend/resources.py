@@ -1,4 +1,5 @@
 from flask_restful import Resource, reqparse
+from flask import request
 from models import User, WhiteTokenModel, Friends, Trip
 import random
 import json
@@ -534,13 +535,14 @@ class Trips(Resource):
         try:
             print("Starting", flush=True)
             current_user = get_jwt_identity()
-            data = get_trip_parser.parse_args()
+            userid = request.args.get('userid')
+            tripid = request.args.get('tripid')
             print("Got data", flush=True)
 
             # If a tripid is provided, it will return just that trip
-            if (data["tripid"]):
+            if (tripid):
                 print("tripid was provided", flush=True)
-                trip = Trip.find_by_tid(int(data["tripid"]))
+                trip = Trip.find_by_tid(int(tripid))
                 print("Found trip", flush=True)
                 # Making sure that the user asking for the trip has access to it, either because the user owns it, or is friends with the owner
                 if (trip.user_id != current_user and Friends.find_by_uid_and_fid(current_user, trip.user_id)):
@@ -556,10 +558,10 @@ class Trips(Resource):
                         "tid": trip.trip_id
                     }, 200
 
-            if (not data["userid"]):
+            if (not userid):
                 userId = current_user
             else:
-                userId = data["userid"]
+                userId = userid
             
             if (current_user == userId or Friends.find_by_uid_and_fid(current_user, userId)):
                 all_trips = Trip.find_all_public_trips(userId)
