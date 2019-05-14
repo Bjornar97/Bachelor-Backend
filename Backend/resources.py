@@ -15,7 +15,6 @@ registration_parser.add_argument('username', help = 'This field cannot be blank'
 
 registration_parser.add_argument('phone', help = 'This field can be blank', required = False)
 
-
 # Registration
 ## URI: /registration
 class UserRegistration(Resource):
@@ -24,19 +23,19 @@ class UserRegistration(Resource):
 
         # Checking if the email is already in our database, returns message if it is. Countinues if not.
         if User.find_by_email(data['email']):
-            return {'message': 'User with email {} already exists'. format(data['email']), 'emailExists': True}, 403
+            return {'message': 'User with email {} already exists'. format(data['email']), 'emailExists': True}, 203
 
         if User.find_by_username(data['username']):
-            return {'message': 'User with username {} already exists'. format(data['username']), 'usernameExists': True}, 403
+            return {'message': 'Bruker {} finnes allerede'. format(data['username']), 'usernameExists': True}, 203
 
         # TODO: Check username
 
         if not re.match(r"^[a-zA-Z0-9]*$", data["username"]):
-            return {'message': 'Brukernavn er ugyldig, kan kun inneholde alfanumeriske tegn', "usernameInvalid": True}, 403
+            return {'message': 'Brukernavn er ugyldig, kan kun inneholde alfanumeriske tegn', "usernameInvalid": True}, 205
 
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
-            return {'message': 'Eposten er ugyldig', "emailInvalid": True}, 403
+            return {'message': 'Eposten er ugyldig', "emailInvalid": True}, 205
 
         data["password"] = User.generate_hash(data["password"])
 
@@ -93,7 +92,7 @@ class UserLogin(Resource):
             current_user = User.find_by_username(data['loginName'])
 
         if not current_user:
-            return {'message': 'User {} doesn\'t exist'.format(data['loginName'])}
+            return {'message': 'User {} doesn\'t exist'.format(data['loginName'])}, 203
         
         # Checking password, if correct, it makes tokens to log the User in
         if User.verify_hash(data["password"], current_user.user_password):
@@ -107,7 +106,7 @@ class UserLogin(Resource):
                 'access_token': access_token
             }, 202
         else:
-            return {'message': 'Wrong email or password'}, 401
+            return {'message': 'Wrong email or password'}, 203
 
 ## URI: /logout
 class UserLogout(Resource):
@@ -152,7 +151,7 @@ class Edit(Resource):
     @jwt_required
     def post(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         data = edit_parser.parse_args()
         
@@ -164,7 +163,7 @@ class Edit(Resource):
         
         # Checks if no object got returned in the query, then return 401 Unauthorized.
         if user_object.user_id == None:
-            return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
+            return {"message": "Invalid uid. The user doesn't exist in our database"}, 204
         
         if data["email"]:
             user_object.user_email = data["email"]
@@ -191,7 +190,7 @@ class ChangePassword(Resource):
     @jwt_required
     def post(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         data = password_parser.parse_args()
         data["password"] = User.generate_hash(data["password"])
         
@@ -203,7 +202,7 @@ class ChangePassword(Resource):
         
         # Checks if no object got returned in the query, then return 401 Unauthorized.
         if user_object.user_id == None:
-            return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
+            return {"message": "Invalid uid. The user doesn't exist in our database"}, 204
         if data["password"]:
             user_object.user_password = data["password"]
         
@@ -224,7 +223,7 @@ class GetUid(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -234,7 +233,7 @@ class GetUid(Resource):
 
             # Checks if no object got returned in the query, then return 401 Unauthorized.
             if user_object == None:
-                return {"message": "Invalid uid. The User doesnt exist in our database"}, 401
+                return {"message": "Invalid uid. The User doesnt exist in our database"}, 204
 
             return {"message": "The uid was found", 
                 "uid": current_user
@@ -250,7 +249,7 @@ class GetEmail(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         try:
             # Getting the uid from the jwt.
@@ -261,7 +260,7 @@ class GetEmail(Resource):
 
             # Checks if no object got returned in the query, then return 401 Unauthorized.
             if user_object == None:
-                return {"message": "Invalid uid. The User doesnt exist in our database"}, 401
+                return {"message": "Invalid uid. The User doesnt exist in our database"}, 205
             
             return {"message": "Email of the User was found", "email": user_object.user_email}, 202
 
@@ -276,7 +275,7 @@ class GetPhone(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         try:
             # Getting the uid from the jwt.
@@ -287,7 +286,7 @@ class GetPhone(Resource):
 
             # Checks if no object got returned in the query, then return 401 Unauthorized.
             if user_object.user_id == None:
-                return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
+                return {"message": "Invalid uid. The user doesn't exist in our database"}, 205
             
             return {"message": "Phone of the user was found", "phone": user_object.user_phone}, 202
 
@@ -301,7 +300,7 @@ class GetUsername(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         try:
             # Getting the uid from the jwt.
@@ -312,7 +311,7 @@ class GetUsername(Resource):
 
             # Checks if no object got returned in the query, then return 401 Unauthorized.
             if user_object == None:
-                return {"message": "Invalid uid. The user doesnt exist in our database"}, 401
+                return {"message": "Invalid uid. The user doesnt exist in our database"}, 204
 
             return {"message": "Name of the user was found", 
                 "username": user_object.user_name 
@@ -328,7 +327,7 @@ class GetAll(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         
         try:
             # Getting the uid from the jwt.
@@ -339,7 +338,7 @@ class GetAll(Resource):
 
             # Checks if no object got returned in the query, then return 401 Unauthorized.
             if user_object.user_id == None:
-                return {"message": "Invalid uid. The user doesn't exist in our database"}, 401
+                return {"message": "Invalid uid. The user doesn't exist in our database"}, 204
 
 
             return {"message": "user was found", 
@@ -364,7 +363,7 @@ class Friend(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         try:
             # Getting the uid from the jwt.
             current_user = get_jwt_identity()
@@ -374,7 +373,7 @@ class Friend(Resource):
 
             # Checks if no object got returned in the query, then return 404 Not Found.
             if friend_objects == None:
-                return {"message": "Error: Friend objects not found"}, 404
+                return {"message": "Error: Friend objects not found"}, 204
             
             friend_list = []
 
@@ -398,7 +397,7 @@ class Friend(Resource):
     @jwt_required
     def post(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         current_user = get_jwt_identity()
         data = friend_edit_parser.parse_args()
@@ -408,7 +407,7 @@ class Friend(Resource):
 
         friend_user = User.find_by_username(data["friend_name"])
         if friend_user == None:
-            return {"message": "Friends user object not found"}, 404
+            return {"message": "Friends user object not found"}, 204
 
         if not data["status"]:
             return {'message': 'Status is required'}
@@ -418,13 +417,13 @@ class Friend(Resource):
             if data["status"] == "send":
                 friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
                 if friend_object != None:
-                    return {"message": "Error: Already on list"}, 401
+                    return {"message": "Error: Already on list"}, 203
                 friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
                 if friends_friend_object != None:
-                    return {"message": "Error: Already on friends list"}, 401
+                    return {"message": "Error: Already on friends list"}, 203
 
                 if friend_user.user_id == current_user:
-                    return {"message": "Error: Can't send a request to yourself"}, 401
+                    return {"message": "Error: Can't send a request to yourself"}, 203
 
                 own_friend_entry = Friends(
                     user_id = current_user,
@@ -445,13 +444,13 @@ class Friend(Resource):
             if data["status"] == "accept":
                 friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
                 if friend_object == None:
-                    return {"message": "Friend object not found"}, 404
+                    return {"message": "Friend object not found"}, 204
                 friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
                 if friends_friend_object == None:
-                    return {"message": "Friends friend object not found"}, 404
+                    return {"message": "Friends friend object not found"}, 204
                 
                 if friend_object.friend_status != "received" or friends_friend_object.friend_status != "sent":
-                    return {"message": "Can't accept because there is no request."}, 401
+                    return {"message": "Can't accept because there is no request."}, 203
 
                 friend_object.friend_status = "accepted"
                 friends_friend_object.friend_status = "accepted"
@@ -466,10 +465,10 @@ class Friend(Resource):
             if data["status"] == "delete":
                 friend_object = Friends.find_by_uid_and_fid(current_user, friend_user.user_id)
                 if friend_object == None:
-                    return {"message": "Friend object not found"}, 404
+                    return {"message": "Friend object not found"}, 204
                 friends_friend_object = Friends.find_by_uid_and_fid(friend_user.user_id, current_user)
                 if friends_friend_object == None:
-                    return {"message": "Friends friend object not found"}, 404
+                    return {"message": "Friends friend object not found"}, 204
 
                 friend_object.delete_from_db()
                 friends_friend_object.delete_from_db()
@@ -495,7 +494,7 @@ class FindByUsername(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         try:
             data = user_exists_parser.parse_args()
@@ -507,7 +506,7 @@ class FindByUsername(Resource):
 
             # Checks if no object got returned in the query, then return 404 Not Found.
             if user_object == None:
-                return {"message": "Invalid username. The user doesnt exist in our database"}, 404
+                return {"message": "Invalid username. The user doesnt exist in our database"}, 204
 
             return {"message": "The user was found", 
                 "id": user_object.user_id
@@ -531,7 +530,7 @@ class Trips(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         try:
             print("Starting", flush=True)
             current_user = get_jwt_identity()
@@ -550,13 +549,14 @@ class Trips(Resource):
                     print("No access", flush=True)
                     return {
                         "message": "You do not have access to that trip"
-                    }, 401
-                elif isFriends.friend_status == "accepted":
+                    }, 203
+                elif (isFriends.friend_status == "accepted" or trip.user_id == current_user):
                     print("Returning", flush=True)
                     return {
                         "message": "The trip with id {} was found".format(tripid),
                         "trips": [trip.trip_json],
-                        "tid": trip.trip_id
+                        "tid": trip.trip_id,
+                        "username": User.find_by_uid(trip.user_id).user_name
                     }, 200
 
             if (not userid):
@@ -573,7 +573,7 @@ class Trips(Resource):
             else:
                 return {
                     "message": "You are not friends with the requested user, therefore you cannot get their trips"
-                }, 401
+                }, 203
 
         except Exception as error:
             return {
@@ -584,7 +584,7 @@ class Trips(Resource):
     @jwt_required
     def post(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
         
         data = post_trip_parser.parse_args()
         print("Test print", flush = True)
@@ -640,7 +640,7 @@ class FriendsTrips(Resource):
     @jwt_required
     def get(self):
         if not WhiteTokenModel.is_jti_whitelisted(get_raw_jwt()["jti"]):
-            return {'message': 'Not logged in'}, 401
+            return {'message': 'Not logged in'}, 205
 
         try:
             current_user = get_jwt_identity()
@@ -649,7 +649,7 @@ class FriendsTrips(Resource):
             if len(friends) == 0:
                 return {
                     "message": "You have no friends"
-                }, 404
+                }, 204
 
             trips = []
 
