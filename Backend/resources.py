@@ -403,14 +403,14 @@ class Friend(Resource):
         data = friend_edit_parser.parse_args()
 
         if not data["friend_name"]:
-            return {'message': 'Friend name is required'}
+            return {'message': 'Friend name is required'}, 203
 
         friend_user = User.find_by_username(data["friend_name"])
         if friend_user == None:
             return {"message": "Friends user object not found"}, 204
 
         if not data["status"]:
-            return {'message': 'Status is required'}
+            return {'message': 'Status is required'}, 203
 
 
         try:
