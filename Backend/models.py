@@ -125,13 +125,12 @@ class WhiteTokenModel(db.Model):
 
 class Trip(db.Model):
     __tablename__ = 'trips_table'
-    trip_id = db.Column(db.Integer, primary_key = True) # pylint: disable=no-member
-    user_id = db.Column(db.Integer, db.ForeignKey('user.uid'), nullable = False) # pylint: disable=no-member
+    trip_id = db.Column(db.Integer, primary_key = True, autoincrement=True) # pylint: disable=no-member
+    user_id = db.Column(db.Integer, db.ForeignKey('user_table.user_id'), nullable = False) # pylint: disable=no-member
     trip_json = db.Column(db.Text, nullable = True) # pylint: disable=no-member
     is_public = db.Column(db.Boolean, nullable = False) # pylint: disable=no-member
 
-    @classmethod
-    def add(self):
+    def save_to_db(self):
         db.session.add(self) # pylint: disable=no-member
         db.session.commit() # pylint: disable=no-member
     
@@ -151,4 +150,13 @@ class Trip(db.Model):
     @classmethod
     def find_all_public_trips(cls, uid):
         return cls.query.filter(cls.user_id == uid, cls.public == True)
+    
+    @classmethod
+    def does_trip_exist(cls, jsonTrip):
+        trip = cls.query.filter_by(trip_json = jsonTrip).first()
+        return {
+            "exists": trip is not None
+    
+        }
+        
     
